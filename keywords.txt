@@ -1,0 +1,42 @@
+#######################################
+
+# Syntax Coloring Map For BGWiFiConfig	
+
+####################################### 
+
+# Class (KEYWORD1)
+
+#######################################
+
+
+
+BGWiFiConfig	KEYWORD1
+
+
+
+#######################################
+
+# Methods and Functions (KEYWORD2)
+
+#######################################	
+
+
+begin	KEYWORD2
+Loop	KEYWORD2
+clearWiFi	KEYWORD2
+setPWWiFi	KEYWORD2
+setWiFiTimeOut	KEYWORD2
+setZDYhtml	KEYWORD2
+setZDYhtmlret	KEYWORD2
+outWiFiSET	KEYWORD2
+offSerial	KEYWORD2
+retRUNTAG	KEYWORD2
+retWiFiSET	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+ 
+
+wifipw	LITERAL1
