@@ -1,0 +1,2 @@
+# BGWiFiConfig
+一个为esp8266设计的简单易用Arduino配网库，可通过api配置WiFi网络，支持GET和POST请求配置，可通过默认网页配置WiFi网络，可自定义配网页面。
