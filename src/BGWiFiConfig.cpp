@@ -288,8 +288,7 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
                + String( "<h2>已配置WiFi名称：" + ssid + "</h2>")
                + String( "<h2>已配置WiFi密码:" +  pwd + "</h2>")
                + String( "<p>确认无误后，请退出页面，并重启开发板</p>")
-                +String("<h3><input type=\"button\" name=\"close\" value=\"关闭网页\" onclick=\"window.close();\" />&nbsp;&nbsp;")
-               + String( "<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></h3></center></body></html>");
+               + String( "<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
   if ( FS_W(retStr))
     WFconfigserver.send(200, "text/html", ret);
 
