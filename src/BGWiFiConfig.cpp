@@ -1,15 +1,22 @@
 #include "BGWiFiConfig.h"
 #include <Arduino.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <WebServer.h>
+#include <SPIFFS.h>
+WebServer WFconfigserver(2022);
+#else
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
+ESP8266WebServer WFconfigserver(2022);
+#endif
 
 bool BGWiFiConfig::booloffSerial = false;
 String BGWiFiConfig::mhtml = "";
 String BGWiFiConfig::mhtmlresult = "";
 String BGWiFiConfig::runTAG = "";
 
-ESP8266WebServer WFconfigserver(2022);
 
 void BGWiFiConfig::Loop() {
   if (TAG != "OFF")
@@ -85,7 +92,11 @@ void BGWiFiConfig:: begin() {
       WFconfigserver.on("/", WRindex);
       WFconfigserver.begin();
       Serial.println();
-      mySerial("配网系统已就绪，预计配网时间为15秒，可以开始配网了<<<", true);
+      #ifdef ESP32
+        mySerial("配网系统已就绪，预计配网时间为12秒，可以开始配网了<<<", true);
+      #else
+        mySerial("配网系统已就绪，预计配网时间为15秒，可以开始配网了<<<", true);
+      #endif
       runTAG = "配网程序开始运行";
     }
   } else {
@@ -129,7 +140,7 @@ void BGWiFiConfig:: APstart() {
                     StrToIP("192.168.22.1"),
                     StrToIP("255.255.255.0"));
   if (APssid != "")
-    WiFi.softAP(APssid, APpwd);
+    WiFi.softAP(APssid.c_str(), APpwd.c_str());
   else
     WiFi.softAP("WiFi配网");
   mySerial("配网信息>>>", true);
@@ -176,7 +187,7 @@ void BGWiFiConfig:: StrCL(String str) {
 void BGWiFiConfig:: STA_M1(String Mname, String Mssid) {
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
-  WiFi.begin(Mname, Mssid);
+  WiFi.begin(Mname.c_str(), Mssid.c_str());
   runTAG = "开始连接WiFi[" + SSID + "]";
   mySerial("Mode1模式：", true);
   mySerial("开始连接WiFi[", false);
@@ -211,7 +222,7 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
     mySerial("WiFi设置失败", true);
   }
   WiFi.mode(WIFI_STA);
-  WiFi.begin(Mname, Mssid);
+  WiFi.begin(Mname.c_str(), Mssid.c_str());
   runTAG = "开始连接WiFi[" + SSID + "]";
   mySerial("Mode2模式：", true);
   mySerial("开始连接WiFi[", false);

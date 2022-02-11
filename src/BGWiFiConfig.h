@@ -1,8 +1,13 @@
 #ifndef _BGWiFiConfig_H_
 #define _BGWiFiConfig_H_
 #include <Arduino.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <WebServer.h>
+#else
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#endif
 
 class BGWiFiConfig
 {
