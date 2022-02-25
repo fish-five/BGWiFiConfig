@@ -17,6 +17,7 @@ class BGWiFiConfig
     static String mhtml, mhtmlresult, runTAG;
     int SECtime = 30;
     bool  booloutwifiset = false;
+    static bool boolautostart;
     static bool booloffSerial;
     static void mySerial(String str, bool nend);
     void debugPZ();
@@ -24,6 +25,7 @@ class BGWiFiConfig
     void StrCL(String str);
     void STA_M1(String Mname, String Mssid);
     void STA_M2(String Mname, String Mssid, String Mlocal_IP, String Mgateway, String Msubnet, String Mdns);
+    static void delay_rst();
     static void WRhtml();
     static void WRhtmlresult();
     static void WRindex();
@@ -43,6 +45,7 @@ class BGWiFiConfig
     void setZDYhtmlret(String html);
     void outWiFiSET(bool tag);
     void offSerial(bool tag);
+    void autoStart(bool tag);
     String retRUNTAG();
     String retWiFiSET();
 };

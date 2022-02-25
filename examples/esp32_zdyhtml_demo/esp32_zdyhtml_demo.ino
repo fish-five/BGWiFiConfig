@@ -12,7 +12,7 @@
 BGWiFiConfig wifipw;
 
 String html = String("<html><head><meta charset=\"utf-8\"><title>BGWiFiConfig</title></head><body>")
-              + String("<form action=\"htmlresult\">")
+              + String("<form action=\"htmlresult\" method=\"post\">")
               + String("<br>WiFi名称:<br><input type=\"text\" name=\"ssid\">")
               + String("<br>WiFi密码:<br><input type=\"text\" name=\"pwd\">")
               + String("<br>模式选择：<input type=\"radio\" name=\"mode\" value=\"1\" checked>mode:1")

@@ -32,7 +32,7 @@ outWiFiSET	KEYWORD2
 offSerial	KEYWORD2
 retRUNTAG	KEYWORD2
 retWiFiSET	KEYWORD2
-
+autoStart		KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

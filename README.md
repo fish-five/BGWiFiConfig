@@ -1,5 +1,5 @@
 # BGWiFiConfig
-一个为esp8266和esp32设计的简单易用Arduino配网库，可通过api配置WiFi网络，支持GET和POST请求配置，可通过默认网页配置WiFi网络，可自定义配网页面。
+一个为esp8266和esp32设计的简单易用Arduino配网库，可通过api配置WiFi网络，支持GET和POST请求配置；可通过微信小程序配网(小程序名：配网库)；可通过默认网页配置WiFi网络；可自定义配网页面。
 
 
 ## [查看开发文档【必看】](https://www.cbug.top/1app/bgwificonfig/#/)
@@ -7,11 +7,11 @@
 ## 配网api
 ### 1.由DHCP分配ip信息：
 - mode：1
-- ssid：你要配置的WiFi名
+- ssid：你要配置的WiFi名称
 - pwd：你要配置的WiFi密码
 ### 2.静态ip：
 - mode：2
-- ssid：你要配置的WiFi名
+- ssid：你要配置的WiFi名称
 - pwd：你要配置的WiFi密码
 - ip：你要配置的WiFi的ip
 - gateway：你要配置的WiFi的网关
@@ -33,6 +33,11 @@ Content-Type: application/x-www-form-urlencoded
 
 mode=2&ssid=cam2&pwd=12345678&ip=192.168.168.69&gateway=192.168.168.219&subnet=255.255.255.0&dns=192.168.168.219
 ```
+## 通过微信小程序配网
+微信小程序搜索【配网库】
+
+![配网库](https://www.cbug.top/1img/pwkxcx.jpg)
+
 
 ## 通过网页配网
 ```

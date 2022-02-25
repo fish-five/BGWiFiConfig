@@ -13,6 +13,7 @@ ESP8266WebServer WFconfigserver(2022);
 #endif
 
 bool BGWiFiConfig::booloffSerial = false;
+bool BGWiFiConfig::boolautostart = false;
 String BGWiFiConfig::mhtml = "";
 String BGWiFiConfig::mhtmlresult = "";
 String BGWiFiConfig::runTAG = "";
@@ -51,6 +52,26 @@ void BGWiFiConfig:: outWiFiSET(bool tag) {
 
 void BGWiFiConfig:: offSerial(bool tag) {
   booloffSerial = tag;
+}
+
+void BGWiFiConfig:: autoStart(bool tag) {
+  boolautostart = tag;
+}
+
+void BGWiFiConfig:: delay_rst() {
+  /**
+    #ifdef ESP32
+    unsigned long onetime = millis();
+    while (true) {
+      unsigned long times = millis();
+      if (times - onetime > 2000)
+        break;
+    }
+    #else
+      delay(2000);
+    #endif
+  */
+  delay(2000);
 }
 
 String BGWiFiConfig:: retRUNTAG() {
@@ -92,18 +113,18 @@ void BGWiFiConfig:: begin() {
       WFconfigserver.on("/", WRindex);
       WFconfigserver.begin();
       Serial.println();
-      #ifdef ESP32
-        mySerial("配网系统已就绪，预计配网时间为12秒，可以开始配网了<<<", true);
-      #else
-        mySerial("配网系统已就绪，预计配网时间为15秒，可以开始配网了<<<", true);
-      #endif
+#ifdef ESP32
+      mySerial("配网系统已就绪，预计配网时间为12秒，可以开始配网了<<<", true);
+#else
+      mySerial("配网系统已就绪，预计配网时间为15秒，可以开始配网了<<<", true);
+#endif
       runTAG = "配网程序开始运行";
     }
   } else {
     mySerial("配网程序启动失败！！", true);
   }
 }
- void BGWiFiConfig::mySerial(String str, bool nend) {
+void BGWiFiConfig::mySerial(String str, bool nend) {
   if (!booloffSerial) {
     if (nend)
       Serial.println(str);
@@ -252,10 +273,10 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
 }
 
 
- void BGWiFiConfig:: WRhtml() {
+void BGWiFiConfig:: WRhtml() {
   WFconfigserver.send(200, "text/html", mhtml);
 }
- void BGWiFiConfig:: WRhtmlresult() {
+void BGWiFiConfig:: WRhtmlresult() {
   String retStr;
   String mode = WFconfigserver.arg("mode");
   String ssid = WFconfigserver.arg("ssid");
@@ -271,25 +292,43 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
     retStr = "tag=OFF,mode=" + mode + ",ssid=" + ssid + ",pwd=" + pwd;
   }
   if (FS_W(retStr)) {
-    if (mhtmlresult != "")
+    if (mhtmlresult != "") {
       WFconfigserver.send(200, "text/html", mhtmlresult);
-    else
-      WFconfigserver.send(200, "text/plain", "ok,zdyhtml,mode=" + mode + ",Please restart the board!");
+      if (boolautostart) {
+        delay_rst();
+        ESP.restart();
+      }
+    }
+    else {
+      if (boolautostart) {
+        WFconfigserver.send(200, "text/plain", "ok,zdyhtml,mode=" + mode + ",The board has rebooted!");
+        delay_rst();
+        ESP.restart();
+      } else {
+        WFconfigserver.send(200, "text/plain", "ok,zdyhtml,mode=" + mode + ",Please restart the board!");
+      }
+    }
   }
 }
 
- void BGWiFiConfig:: WRindex() {
+void BGWiFiConfig:: WRindex() {
+  String time = "";
+#ifdef ESP32
+  time = "12";
+#else
+  time = "15";
+#endif
   String ret = String("<html><head><meta charset=\"utf-8\"><title>BGWiFiConfig配网</title></head><body>")
                + String("<center><form action=\"result\" method=\"post\">")
                + String( "<h3>配网</h3>")
                + String( "<h4>WiFi名称：<input type=\"text\" name=\"ssid\"/></h4>")
                + String( " <h4>WiFi密码：<input type=\"text\" name=\"pwd\"/></h4>")
-               + String( " <p>&nbsp;&nbsp;>>预计需要15秒</p>")
+               + String( " <p>&nbsp;&nbsp;>>预计需要" + time + "秒</p>")
                + String( "<input type=\"submit\" value=\" 开始配网 \"></form></center></body></html>");
   WFconfigserver.send(200, "text/html", ret);
 }
 
- void BGWiFiConfig:: WRresult() {
+void BGWiFiConfig:: WRresult() {
   String ssid = WFconfigserver.arg("ssid");
   String pwd = WFconfigserver.arg("pwd");
   String retStr = "tag=OFF,mode=1,ssid=" + ssid + ",pwd=" + pwd;
@@ -300,12 +339,28 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
                + String( "<h2>已配置WiFi密码:" +  pwd + "</h2>")
                + String( "<p>确认无误后，请退出页面，并重启开发板</p>")
                + String( "<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
-  if ( FS_W(retStr))
-    WFconfigserver.send(200, "text/html", ret);
+
+  String ret2 = String("<html><head><meta charset=\"utf-8\"><title>BGWiFiConfig配网</title></head><body>")
+                + String("<center>")
+                + String( "<h2>配网写入结果</h2>")
+                + String( "<h2>已配置WiFi名称：" + ssid + "</h2>")
+                + String( "<h2>已配置WiFi密码：" +  pwd + "</h2>")
+                + String( "<p>已调用autoStart()函数，已自动重启开发板，请观察串口输出！！</p>")
+                + String( "<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
+
+  if ( FS_W(retStr)) {
+    if (boolautostart) {
+      WFconfigserver.send(200, "text/html", ret2);
+      delay_rst();
+      ESP.restart();
+    } else {
+      WFconfigserver.send(200, "text/html", ret);
+    }
+  }
 
 }
 
- void BGWiFiConfig:: WRapi() {
+void BGWiFiConfig:: WRapi() {
   String retStr;
   String mode = WFconfigserver.arg("mode");
   String ssid = WFconfigserver.arg("ssid");
@@ -320,8 +375,15 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
   } else {
     retStr = "tag=OFF,mode=" + mode + ",ssid=" + ssid + ",pwd=" + pwd;
   }
-  if (FS_W(retStr))
-    WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",Please restart the board!");
+  if (FS_W(retStr)) {
+    if (boolautostart) {
+      WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",The board has rebooted!");
+      delay_rst();
+      ESP.restart();
+    } else {
+      WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",Please restart the board!");
+    }
+  }
 }
 
 
@@ -331,15 +393,19 @@ IPAddress BGWiFiConfig:: StrToIP(String str) {
   return ipadd;
 }
 
- bool BGWiFiConfig:: FS_W(String str) {
+bool BGWiFiConfig:: FS_W(String str) {
   SPIFFS.format();
   File dataFile = SPIFFS.open("/bgwificonfig/wifiset.txt", "w");
   dataFile.print(str);
   dataFile.close();
   Serial.println();
   mySerial(">>", true);
-  mySerial(">>配网信息已写入，请重启开发板，连接WiFi！！", true);
-    runTAG = "配网信息已写入";
+  if (boolautostart) {
+    mySerial(">>配网信息已写入，开发板将自动重启并连接WiFi，请观察串口信息！！", true);
+  } else {
+    mySerial(">>配网信息已写入，请重启开发板，连接WiFi！！", true);
+  }
+  runTAG = "配网信息已写入";
   return true;
 }
 
