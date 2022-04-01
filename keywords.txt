@@ -33,7 +33,10 @@ offSerial	KEYWORD2
 retRUNTAG	KEYWORD2
 retWiFiSET	KEYWORD2
 autoStart		KEYWORD2
-
+setNumUMSG	KEYWORD2
+readUMSG	KEYWORD2
+readWiFi		KEYWORD2
+offConnectWiFi	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################

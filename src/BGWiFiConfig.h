@@ -14,15 +14,19 @@ class BGWiFiConfig
   private:
     String TAG, MODE, SSID, PWD, IP, GATEWAY, SUBNET, DNS;
     String APssid, APpwd;
+    static String StrsUMSG[13];
     static String mhtml, mhtmlresult, runTAG;
     int SECtime = 30;
+    static int UMSGnum;
     bool  booloutwifiset = false;
+    bool  booloffconnectwifi = false;
     static bool boolautostart;
     static bool booloffSerial;
     static void mySerial(String str, bool nend);
     void debugPZ();
     void APstart();
     void StrCL(String str);
+    void StrCL_UMSG(String str);
     void STA_M1(String Mname, String Mssid);
     void STA_M2(String Mname, String Mssid, String Mlocal_IP, String Mgateway, String Msubnet, String Mdns);
     static void delay_rst();
@@ -34,6 +38,8 @@ class BGWiFiConfig
     IPAddress StrToIP(String str);
     static bool FS_W(String str);
     String FS_R();
+    static bool FS_W_UMSG(String str);
+    String FS_R_UMSG();
 
   public:
     void begin();
@@ -44,8 +50,12 @@ class BGWiFiConfig
     void setZDYhtml(String html);
     void setZDYhtmlret(String html);
     void outWiFiSET(bool tag);
-    void offSerial(bool tag);
+    void offSerial(bool tag); 
     void autoStart(bool tag);
+    void offConnectWiFi(bool tag);
+    void setNumUMSG(int i);
+    String readUMSG(int i);
+    String readWiFi(int i);
     String retRUNTAG();
     String retWiFiSET();
 };

@@ -17,6 +17,8 @@ bool BGWiFiConfig::boolautostart = false;
 String BGWiFiConfig::mhtml = "";
 String BGWiFiConfig::mhtmlresult = "";
 String BGWiFiConfig::runTAG = "";
+String BGWiFiConfig::StrsUMSG[13] = {"NULL"};
+int BGWiFiConfig::UMSGnum = 0;
 
 
 void BGWiFiConfig::Loop() {
@@ -36,6 +38,10 @@ void BGWiFiConfig:: setPWWiFi(String ssid, String pwd) {
 
 void BGWiFiConfig:: setWiFiTimeOut(int sectime) {
   SECtime = sectime;
+}
+
+void BGWiFiConfig:: setNumUMSG(int umsgnum) {
+  UMSGnum = umsgnum;
 }
 
 void BGWiFiConfig:: setZDYhtml(String html) {
@@ -94,7 +100,9 @@ void BGWiFiConfig:: begin() {
   Serial.println();
   if (SPIFFS.begin()) {
     StrCL(FS_R());
-    if (TAG == "OFF") {
+    if (TAG == "OFF" && !booloffconnectwifi) {
+      if (UMSGnum > 0 && UMSGnum < 13 )
+        StrCL_UMSG(FS_R_UMSG());
       if (MODE == "2") {
         STA_M2(SSID, PWD, IP, GATEWAY, SUBNET, DNS);
         debugPZ();
@@ -102,7 +110,13 @@ void BGWiFiConfig:: begin() {
         STA_M1(SSID, PWD);
         debugPZ();
       }
-    } else {
+    } else if (TAG == "OFF" && booloffconnectwifi) {
+      mySerial("....user wificode start....", true);
+      if (UMSGnum > 0 && UMSGnum < 13 )
+        StrCL_UMSG(FS_R_UMSG());
+      debugPZ();
+    }
+    else {
       mySerial("欢迎使用BGWiFiConfig配网程序！！", true);
       Serial.println();
       APstart();
@@ -124,6 +138,7 @@ void BGWiFiConfig:: begin() {
     mySerial("配网程序启动失败！！", true);
   }
 }
+
 void BGWiFiConfig::mySerial(String str, bool nend) {
   if (!booloffSerial) {
     if (nend)
@@ -178,7 +193,6 @@ void BGWiFiConfig:: APstart() {
   mySerial(":2022/html", true);
   mySerial("<<<<<end<<<", true);
 }
-
 
 void BGWiFiConfig:: StrCL(String str) {
   if (str != "NULL") {
@@ -291,6 +305,33 @@ void BGWiFiConfig:: WRhtmlresult() {
   } else {
     retStr = "tag=OFF,mode=" + mode + ",ssid=" + ssid + ",pwd=" + pwd;
   }
+
+  if (UMSGnum > 0) {
+    String UMSGNAME[12] = {"umsg1", "umsg2", "umsg3", "umsg4", "umsg5", "umsg6",
+                           "umsg7", "umsg8", "umsg9", "umsg10", "umsg11", "umsg12"
+                          };
+    String retStr2 = "";
+    for (int i = 0; i < UMSGnum; i++) {
+      StrsUMSG[i] = WFconfigserver.arg(UMSGNAME[i]);
+      StrsUMSG[i].trim();
+      if (StrsUMSG[i] != "" && StrsUMSG[i] != " " && StrsUMSG[i] != NULL && StrsUMSG[i] != "NULL") {
+        retStr2 += UMSGNAME[i] + "=" + StrsUMSG[i];
+      } else {
+        retStr2 += UMSGNAME[i] + "=" + "[err:7000]设置的数据组与实际数据组数量不等！！";
+      }
+    }
+    retStr2.trim();
+    retStr2 = retStr2 + "=umsg=";
+    if (FS_W_UMSG(retStr2))
+    {
+      mySerial(">>UMSG Write OK", true);
+      mySerial(">>自定义信息已写入：", false);
+      mySerial(String(UMSGnum), false);
+      mySerial("条", true);
+      runTAG = "自定义信息已写入：" + String(UMSGnum) + "条";
+    }
+  }
+
   if (FS_W(retStr)) {
     if (mhtmlresult != "") {
       WFconfigserver.send(200, "text/html", mhtmlresult);
@@ -327,7 +368,6 @@ void BGWiFiConfig:: WRindex() {
                + String( "<input type=\"submit\" value=\" 开始配网 \"></form></center></body></html>");
   WFconfigserver.send(200, "text/html", ret);
 }
-
 void BGWiFiConfig:: WRresult() {
   String ssid = WFconfigserver.arg("ssid");
   String pwd = WFconfigserver.arg("pwd");
@@ -357,7 +397,6 @@ void BGWiFiConfig:: WRresult() {
       WFconfigserver.send(200, "text/html", ret);
     }
   }
-
 }
 
 void BGWiFiConfig:: WRapi() {
@@ -375,6 +414,33 @@ void BGWiFiConfig:: WRapi() {
   } else {
     retStr = "tag=OFF,mode=" + mode + ",ssid=" + ssid + ",pwd=" + pwd;
   }
+
+  if (UMSGnum > 0) {
+    String UMSGNAME[12] = {"umsg1", "umsg2", "umsg3", "umsg4", "umsg5", "umsg6",
+                           "umsg7", "umsg8", "umsg9", "umsg10", "umsg11", "umsg12"
+                          };
+    String retStr2 = "";
+    for (int i = 0; i < UMSGnum; i++) {
+      StrsUMSG[i] = WFconfigserver.arg(UMSGNAME[i]);
+      StrsUMSG[i].trim();
+      if (StrsUMSG[i] != "" && StrsUMSG[i] != " " && StrsUMSG[i] != NULL && StrsUMSG[i] != "NULL") {
+        retStr2 += UMSGNAME[i] + "=" + StrsUMSG[i];
+      } else {
+        retStr2 += UMSGNAME[i] + "=" + "[err:7000]设置的数据组与实际数据组数量不等！！";
+      }
+    }
+    retStr2.trim();
+    retStr2 = retStr2 + "=umsg=";
+    if (FS_W_UMSG(retStr2))
+    {
+      mySerial(">>UMSG Write OK", true);
+      mySerial(">>自定义信息已写入：", false);
+      mySerial(String(UMSGnum), false);
+      mySerial("条", true);
+      runTAG = "自定义信息已写入：" + String(UMSGnum) + "条";
+    }
+  }
+
   if (FS_W(retStr)) {
     if (boolautostart) {
       WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",The board has rebooted!");
@@ -394,7 +460,8 @@ IPAddress BGWiFiConfig:: StrToIP(String str) {
 }
 
 bool BGWiFiConfig:: FS_W(String str) {
-  SPIFFS.format();
+  if (UMSGnum < 1)
+    SPIFFS.format();
   File dataFile = SPIFFS.open("/bgwificonfig/wifiset.txt", "w");
   dataFile.print(str);
   dataFile.close();
@@ -420,4 +487,70 @@ String BGWiFiConfig:: FS_R() {
   }
   dataFile.close();
   return retStr;
+}
+
+bool BGWiFiConfig:: FS_W_UMSG(String str) {
+  SPIFFS.format();
+  File dataFile = SPIFFS.open("/bgwificonfig/umsg.txt", "w");
+  dataFile.print(str);
+  dataFile.close();
+  Serial.println();
+  mySerial(">>", true);
+  return true;
+}
+
+String BGWiFiConfig:: FS_R_UMSG() {
+  if (!SPIFFS.exists("/bgwificonfig/umsg.txt")) {
+    return "NULL";
+  }
+  File dataFile = SPIFFS.open("/bgwificonfig/umsg.txt", "r");
+  String retStr ;
+  for (int i = 0; i < dataFile.size(); i++) {
+    retStr += (char)dataFile.read();
+  }
+  dataFile.close();
+  return retStr;
+}
+
+void BGWiFiConfig:: StrCL_UMSG(String str) {
+  if (str != "NULL" && str != "" && str != NULL && UMSGnum > 0 && UMSGnum < 13) {
+    str.trim();
+    String umsgname[13] = {
+      "umsg1=", "umsg2=", "umsg3=",
+      "umsg4=", "umsg5=", "umsg6=",
+      "umsg7=", "umsg8=", "umsg9=",
+      "umsg10=", "umsg11=", "umsg12=", "=umsg="
+    };
+    int umsgkey[13] = { -1};
+    for (int i = 0; i < UMSGnum + 1; i++) {
+      umsgkey[i] = str.indexOf(umsgname[i]);
+    }
+    for (int j = 0; j < UMSGnum - 1; j++) {
+      StrsUMSG[j] = str.substring(umsgkey[j] + umsgname[j].length(), umsgkey[j + 1]);
+    }
+    StrsUMSG[UMSGnum - 1] = str.substring(umsgkey[UMSGnum - 1] + umsgname[UMSGnum - 1].length(), str.indexOf(umsgname[12]) );
+  }
+}
+
+String BGWiFiConfig:: readUMSG(int i) {
+  if (UMSGnum > 0 && i < 13 && i > 0 && TAG == "OFF") {
+    StrsUMSG[i - 1].trim();
+    if (StrsUMSG[i - 1] != NULL && StrsUMSG[i - 1] != "" && StrsUMSG[i - 1] != "NULL")
+      return StrsUMSG[i - 1];
+  }
+  return "NULL";
+}
+
+void BGWiFiConfig:: offConnectWiFi(bool tag) {
+  booloffconnectwifi = tag;
+}
+
+String BGWiFiConfig:: readWiFi(int i) {
+  String str = FS_R();
+  if (i == 0) {
+    return str.substring(str.indexOf(",ssid=") + 6, str.indexOf(",pwd="));
+  } else if (i == 1) {
+    return str.substring(str.indexOf(",pwd=") + 5, str.indexOf(",ip="));
+  }
+  return "NULL";
 }
