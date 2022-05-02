@@ -1,15 +1,26 @@
 #include "BGWiFiConfig.h"
+#include "DEFPORT.h"
 #include <Arduino.h>
+#include <DNSServer.h>
+DNSServer WFconfigDNSserver;
 #ifdef ESP32
 #include <WiFi.h>
 #include <WebServer.h>
 #include <SPIFFS.h>
+#if DEFPORT == 80
+WebServer WFconfigserver(80);
+#else
 WebServer WFconfigserver(2022);
+#endif
 #else
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
+#if DEFPORT == 80
+ESP8266WebServer WFconfigserver(80);
+#else
 ESP8266WebServer WFconfigserver(2022);
+#endif
 #endif
 
 bool BGWiFiConfig::booloffSerial = false;
@@ -18,12 +29,15 @@ String BGWiFiConfig::mhtml = "";
 String BGWiFiConfig::mhtmlresult = "";
 String BGWiFiConfig::runTAG = "";
 String BGWiFiConfig::StrsUMSG[13] = {"NULL"};
+String BGWiFiConfig::StrApiRet[2] = {"NULL"};
 int BGWiFiConfig::UMSGnum = 0;
 
 
 void BGWiFiConfig::Loop() {
-  if (TAG != "OFF")
+  if (TAG != "OFF") {
     WFconfigserver.handleClient();
+    WFconfigDNSserver.processNextRequest();
+  }
 }
 
 void BGWiFiConfig:: clearWiFi() {
@@ -67,9 +81,9 @@ void BGWiFiConfig:: autoStart(bool tag) {
 void BGWiFiConfig:: delay_rst() {
   /**
     #ifdef ESP32
-    unsigned long onetime = millis();
+    unsigned long onetime=millis();
     while (true) {
-      unsigned long times = millis();
+      unsigned long times=millis();
       if (times - onetime > 2000)
         break;
     }
@@ -88,7 +102,7 @@ String BGWiFiConfig:: retRUNTAG() {
 }
 
 String BGWiFiConfig:: retWiFiSET() {
-  String str =  FS_R();
+  String str = FS_R();
   str.trim();
   if (str.length() > 8)
     return str.substring(8);
@@ -120,13 +134,49 @@ void BGWiFiConfig:: begin() {
       mySerial("欢迎使用BGWiFiConfig配网程序！！", true);
       Serial.println();
       APstart();
+      Serial.println();
+#if DEFPORT == 80
+      WFconfigserver.on("/result", HTTP_GET, WRresult);
+      WFconfigserver.on("/result", HTTP_POST, WRresult);
+      WFconfigserver.on("/api", HTTP_POST, WRapi);
+      WFconfigserver.on("/api", HTTP_GET, WRapi);
+      WFconfigserver.on("/html", HTTP_GET, WRhtml);
+      WFconfigserver.on("/html", HTTP_POST, WRhtml);
+      WFconfigserver.on("/htmlresult", HTTP_GET, WRhtmlresult);
+      WFconfigserver.on("/htmlresult", HTTP_POST, WRhtmlresult);
+      WFconfigserver.on("/def", HTTP_GET, WRindex);
+      WFconfigserver.on("/def", HTTP_POST, WRindex);
+      if (DEFPORTPWMODE == 1) {
+        WFconfigserver.on("/", HTTP_GET, WRindex);
+        WFconfigserver.on("/", HTTP_POST, WRindex);
+        WFconfigserver.onNotFound(WRindex);
+        mySerial(">>当前为eeshow模式1", true);
+      } else if (DEFPORTPWMODE == 2) {
+        WFconfigserver.on("/", HTTP_GET, WRhtml);
+        WFconfigserver.on("/", HTTP_POST, WRhtml);
+        WFconfigserver.onNotFound(WRhtml);
+        mySerial(">>当前为eeshow模式2", true);
+      } else {
+        WFconfigserver.on("/", HTTP_GET, WRindexDH);
+        WFconfigserver.on("/", HTTP_POST, WRindexDH);
+        WFconfigserver.onNotFound(WRindexDH);
+        mySerial(">>当前为eeshow模式0", true);
+      }
+      WFconfigserver.begin();
+      if (WFconfigDNSserver.start(53, "*", StrToIP("192.168.22.22"))) {
+        mySerial(">>eeshow模式启动成功", true);
+      } else {
+        mySerial(">>eeshow模式启动失败", true);
+      }
+#else
       WFconfigserver.on("/result", WRresult);
       WFconfigserver.on("/api", WRapi);
       WFconfigserver.on("/html", WRhtml);
       WFconfigserver.on("/htmlresult", WRhtmlresult);
       WFconfigserver.on("/", WRindex);
       WFconfigserver.begin();
-      Serial.println();
+      mySerial(">>当前为默认模式", true);
+#endif
 #ifdef ESP32
       mySerial("配网系统已就绪，预计配网时间为12秒，可以开始配网了<<<", true);
 #else
@@ -182,6 +232,17 @@ void BGWiFiConfig:: APstart() {
   mySerial("配网信息>>>", true);
   mySerial("配网WiFi:", false);
   mySerial(WiFi.softAPSSID(), true);
+#if DEFPORT == 80
+  mySerial("配网页面：", false);
+  mySerial(WiFi.softAPIP().toString(), false);
+  mySerial("/def", true);
+  mySerial("配网接口：", false);
+  mySerial(WiFi.softAPIP().toString(), false);
+  mySerial("/api", true);
+  mySerial("自定义配网页面：", false);
+  mySerial(WiFi.softAPIP().toString(), false);
+  mySerial("/html", true);
+#else
   mySerial("配网页面：", false);
   mySerial(WiFi.softAPIP().toString(), false);
   mySerial(":2022", true);
@@ -191,6 +252,7 @@ void BGWiFiConfig:: APstart() {
   mySerial("自定义配网页面：", false);
   mySerial(WiFi.softAPIP().toString(), false);
   mySerial(":2022/html", true);
+#endif
   mySerial("<<<<<end<<<", true);
 }
 
@@ -287,6 +349,25 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
 }
 
 
+void BGWiFiConfig:: WRindexDH() {
+  String dhhtml = String("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">")
+                  + String("<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" ")
+                  + String("content=\"width=device-width, initial-scale=1.0\"><title>BGWiFiConfig配网 </title > ")
+                  + String("<style> .button { background-color: #4CAF50; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px; text-align: center; } .grad { background-color: red; background-image: linear-gradient(#e66465, #9198e5); text-align: center; } </style>")
+                  + String("</head> <h1 style=\"color: rgb(87, 217, 215);\">BGWiFiConfig</h1>")
+                  + String("<h2 style=\"color: wheat;\">请选择配网模式</h2>")
+                  + String("<a class=\"button\" href=\"http://192.168.22.22/def\">默认网页配网</a><br>")
+                  + String("<a class=\"button\" href=\"http://192.168.22.22/html\">自定义网页配网</a>")
+                  + String("<h3>api配网和微信小程序配网默认已支持，无需选择。</h3>")
+                  + String("</body></html>");
+
+  if (DEFPORTHTML != "" && DEFPORTHTML != "NULL" && DEFPORTHTML != NULL) {
+    WFconfigserver.send(200, "text/html", DEFPORTHTML);
+  } else {
+    WFconfigserver.send(200, "text/html", dhhtml);
+  }
+}
+
 void BGWiFiConfig:: WRhtml() {
   WFconfigserver.send(200, "text/html", mhtml);
 }
@@ -322,31 +403,35 @@ void BGWiFiConfig:: WRhtmlresult() {
     }
     retStr2.trim();
     retStr2 = retStr2 + "=umsg=";
+    retStr2.replace(" ", "");
     if (FS_W_UMSG(retStr2))
     {
-      mySerial(">>UMSG Write OK", true);
-      mySerial(">>自定义信息已写入：", false);
+      mySerial(">> UMSG Write OK", true);
+      mySerial(">> 自定义信息已写入：", false);
       mySerial(String(UMSGnum), false);
       mySerial("条", true);
       runTAG = "自定义信息已写入：" + String(UMSGnum) + "条";
     }
   }
 
-  if (FS_W(retStr)) {
-    if (mhtmlresult != "") {
-      WFconfigserver.send(200, "text/html", mhtmlresult);
-      if (boolautostart) {
-        delay_rst();
-        ESP.restart();
+  if (ssid != "" && ssid != NULL) {
+    retStr.replace(" ", "");
+    if (FS_W(retStr)) {
+      if (mhtmlresult != "") {
+        WFconfigserver.send(200, "text/html", mhtmlresult);
+        if (boolautostart) {
+          delay_rst();
+          ESP.restart();
+        }
       }
-    }
-    else {
-      if (boolautostart) {
-        WFconfigserver.send(200, "text/plain", "ok,zdyhtml,mode=" + mode + ",The board has rebooted!");
-        delay_rst();
-        ESP.restart();
-      } else {
-        WFconfigserver.send(200, "text/plain", "ok,zdyhtml,mode=" + mode + ",Please restart the board!");
+      else {
+        if (boolautostart) {
+          WFconfigserver.send(200, "text/plain", "ok, zdyhtml, mode=" + mode + ", The board has rebooted!");
+          delay_rst();
+          ESP.restart();
+        } else {
+          WFconfigserver.send(200, "text/plain", "ok, zdyhtml, mode=" + mode + ", Please restart the board!");
+        }
       }
     }
   }
@@ -359,13 +444,23 @@ void BGWiFiConfig:: WRindex() {
 #else
   time = "15";
 #endif
-  String ret = String("<html><head><meta charset=\"utf-8\"><title>BGWiFiConfig配网</title></head><body>")
-               + String("<center><form action=\"result\" method=\"post\">")
-               + String( "<h3>配网</h3>")
-               + String( "<h4>WiFi名称：<input type=\"text\" name=\"ssid\"/></h4>")
-               + String( " <h4>WiFi密码：<input type=\"text\" name=\"pwd\"/></h4>")
-               + String( " <p>&nbsp;&nbsp;>>预计需要" + time + "秒</p>")
-               + String( "<input type=\"submit\" value=\" 开始配网 \"></form></center></body></html>");
+  /**
+    String ret2=String("<!DOCTYPE html> <html lang=\"zh-CN\"> <head> <meta charset=\"UTF-8\"><title>BGWiFiConfig配网</title></head><body>")
+                + String("<center><form action=\"result\" method=\"post\">")
+                + String( "<h3>配网</h3>")
+                + String( "<h4>WiFi名称：<input type=\"text\" name=\"ssid\"/></h4>")
+                + String( " <h4>WiFi密码：<input type=\"text\" name=\"pwd\"/></h4>")
+                + String( " <p>&nbsp;&nbsp;>>预计需要" + time + "秒</p>")
+                + String( "<input type=\"submit\" value=\" 开始配网 \"></form></center></body></html>");
+  **/
+  String ret = String("<!DOCTYPE html> <html lang=\"zh-CN\"> <head> <meta charset=\"UTF-8\"><title>BGWiFiConfig配网</title>")
+               + String("<style> .input { border: 2px solid orange; padding: 10px; border-radius: 50px 20px; } .toptext { text-shadow: 5px 5px 5px #4e1f1f; } .button { display: inline-block; padding: 15px 25px; font-size: 24px; cursor: pointer; text-align: center; text-decoration: none; outline: none; color: #fff; background-color: #4CAF50; border: none; border-radius: 15px; box-shadow: 0 9px #999; } .button:hover { background-color: #3e8e41 } .button:active { background-color: #3e8e41; box-shadow: 0 5px #666; transform: translateY(4px); } </style>")
+               + String("</head><body><center><form action=\"result\" method=\"post\">")
+               + String( "<h2 class=\"toptext\">配网</h2>")
+               + String( "<h4>WiFi名称：<input class=\"input\" type=text name=ssid /></h4>")
+               + String( "<h4>WiFi密码：<input class=\"input\" type=text name=pwd /></h4>")
+               + String( "<p>&nbsp;&nbsp;>>预计需要" + time + "秒</p>")
+               + String( "<input class=\"button\" type=\"submit\" value=\" 开始配网\"></form></center></body></html>");
   WFconfigserver.send(200, "text/html", ret);
 }
 void BGWiFiConfig:: WRresult() {
@@ -387,20 +482,22 @@ void BGWiFiConfig:: WRresult() {
                 + String( "<h2>已配置WiFi密码：" +  pwd + "</h2>")
                 + String( "<p>已调用autoStart()函数，已自动重启开发板，请观察串口输出！！</p>")
                 + String( "<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
-
-  if ( FS_W(retStr)) {
-    if (boolautostart) {
-      WFconfigserver.send(200, "text/html", ret2);
-      delay_rst();
-      ESP.restart();
-    } else {
-      WFconfigserver.send(200, "text/html", ret);
+  if (ssid != "" && ssid != NULL) {
+    retStr.replace(" ", "");
+    if ( FS_W(retStr)) {
+      if (boolautostart) {
+        WFconfigserver.send(200, "text/html", ret2);
+        delay_rst();
+        ESP.restart();
+      } else {
+        WFconfigserver.send(200, "text/html", ret);
+      }
     }
   }
 }
 
 void BGWiFiConfig:: WRapi() {
-  String retStr;
+  String retStr = "";
   String mode = WFconfigserver.arg("mode");
   String ssid = WFconfigserver.arg("ssid");
   String pwd = WFconfigserver.arg("pwd");
@@ -431,6 +528,7 @@ void BGWiFiConfig:: WRapi() {
     }
     retStr2.trim();
     retStr2 = retStr2 + "=umsg=";
+    retStr2.replace(" ", "");
     if (FS_W_UMSG(retStr2))
     {
       mySerial(">>UMSG Write OK", true);
@@ -441,13 +539,22 @@ void BGWiFiConfig:: WRapi() {
     }
   }
 
+  retStr.replace(" ", "");
   if (FS_W(retStr)) {
-    if (boolautostart) {
-      WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",The board has rebooted!");
-      delay_rst();
-      ESP.restart();
+    if (StrApiRet[0] != NULL && StrApiRet[0] != "NULL" && StrApiRet[0] != "") {
+      if (StrApiRet[1] == "addWiFi") {
+        WFconfigserver.send(200, "text/plain", StrApiRet[0] + ">>[" + mode + "," + ssid + "," + pwd + "]<<");
+      } else {
+        WFconfigserver.send(200, "text/plain", StrApiRet[0]);
+      }
     } else {
-      WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",Please restart the board!");
+      if (boolautostart) {
+        WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",The board has rebooted!");
+        delay_rst();
+        ESP.restart();
+      } else {
+        WFconfigserver.send(200, "text/plain", "ok,mode=" + mode + ",Please restart the board!");
+      }
     }
   }
 }
@@ -551,6 +658,35 @@ String BGWiFiConfig:: readWiFi(int i) {
     return str.substring(str.indexOf(",ssid=") + 6, str.indexOf(",pwd="));
   } else if (i == 1) {
     return str.substring(str.indexOf(",pwd=") + 5, str.indexOf(",ip="));
+  } else if (i == 2) {
+    if (WiFi.isConnected())
+      return "wifiok";
+    else
+      return "wifibad";
   }
   return "NULL";
+}
+
+String& BGWiFiConfig:: setApiRet(int i) {
+  String& str = StrApiRet[i];
+  return str;
+}
+
+bool BGWiFiConfig:: OK(bool tag) {
+  String str = "";
+  str = FS_R();
+  str = str.substring(str.indexOf(",ssid=") + 6, str.indexOf(",pwd="));
+  if (str != "" && str != "NULL" && str != NULL) {
+    if (tag) {
+      if (WiFi.isConnected())
+        return true;
+      else
+        return false;
+    } else {
+      return true;
+    }
+  } else {
+    return false;
+  }
+  return false;
 }

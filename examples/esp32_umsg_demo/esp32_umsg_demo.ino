@@ -1,6 +1,6 @@
 /**
     BGWiFiConfig示例代码
-    开发板： NodeMCU32S
+    开发板： NodeMCU-32S
     实现功能：BGWiFiConfig库UMSG(配网时自定义数据)功能演示。
     开发文档：https://www.cbug.top/1app/bgwificonfig
     Gitee地址：https://gitee.com/fish_five/BGWiFiConfig
@@ -48,7 +48,7 @@ void setup() {
       Serial.print("打印数据组[");
       Serial.print(i);
       Serial.print("]-->");
-      Serial.println(wifipw.readUMSG(i));
+      Serial.println(msg);
     }
   }
 }

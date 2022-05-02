@@ -48,7 +48,7 @@ void setup() {
       Serial.print("打印数据组[");
       Serial.print(i);
       Serial.print("]-->");
-      Serial.println(wifipw.readUMSG(i));
+      Serial.println(msg);
     }
   }
 }

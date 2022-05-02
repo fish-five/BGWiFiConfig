@@ -1,0 +1,3 @@
+#define DEFPORT 2022
+#define DEFPORTPWMODE 0
+#define DEFPORTHTML "NULL"

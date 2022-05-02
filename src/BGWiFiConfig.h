@@ -1,12 +1,16 @@
 #ifndef _BGWiFiConfig_H_
 #define _BGWiFiConfig_H_
 #include <Arduino.h>
+#include "DEFPORT.h"
+#include <DNSServer.h>
 #ifdef ESP32
 #include <WiFi.h>
 #include <WebServer.h>
+#include <SPIFFS.h>
 #else
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <FS.h>
 #endif
 
 class BGWiFiConfig
@@ -15,6 +19,7 @@ class BGWiFiConfig
     String TAG, MODE, SSID, PWD, IP, GATEWAY, SUBNET, DNS;
     String APssid, APpwd;
     static String StrsUMSG[13];
+    static String StrApiRet[2];
     static String mhtml, mhtmlresult, runTAG;
     int SECtime = 30;
     static int UMSGnum;
@@ -35,6 +40,7 @@ class BGWiFiConfig
     static void WRindex();
     static void WRresult();
     static void WRapi();
+    static void WRindexDH();
     IPAddress StrToIP(String str);
     static bool FS_W(String str);
     String FS_R();
@@ -50,7 +56,7 @@ class BGWiFiConfig
     void setZDYhtml(String html);
     void setZDYhtmlret(String html);
     void outWiFiSET(bool tag);
-    void offSerial(bool tag); 
+    void offSerial(bool tag);
     void autoStart(bool tag);
     void offConnectWiFi(bool tag);
     void setNumUMSG(int i);
@@ -58,5 +64,7 @@ class BGWiFiConfig
     String readWiFi(int i);
     String retRUNTAG();
     String retWiFiSET();
+    bool OK(bool tag = false);
+    String& setApiRet(int i);
 };
 #endif

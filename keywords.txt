@@ -37,6 +37,10 @@ setNumUMSG	KEYWORD2
 readUMSG	KEYWORD2
 readWiFi		KEYWORD2
 offConnectWiFi	KEYWORD2
+setApiRet		KEYWORD2
+OK	KEYWORD2
+
+
 #######################################
 # Constants (LITERAL1)
 #######################################
