@@ -7,7 +7,15 @@
     微信公众号：蚍蜉荣光  官方网站：www.cbug.top
 --------------------------------------------------------
   1.eeshow模式的开启和关闭？
-    答：通过BGWiFiConfig配置助手软件操作。
+    1.1.通过宏定义开启：
+      #define eeshow
+      #define eeshowM 0 
+      #include <BGWiFiConfig.h>
+      tag:程序内定义eeshow,再通过eeshowM指定弹起页面(0.导航页面,1.默认页面,2.自定义页面)
+    1.2.通过BGWiFiConfig配置助手开启
+      #define exe
+      #include <BGWiFiConfig.h> 
+      tag:程序内定义exe,再运行配置助手进行配置       
   2.BGWiFiConfig配置助手如何下载？
     答:https://www.cbug.top/article/25.html
   3.eeshow模式实现了什么需求？

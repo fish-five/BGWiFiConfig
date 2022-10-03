@@ -1,5 +1,5 @@
 # BGWiFiConfig
-一个为esp8266和esp32设计的简单易用Arduino配网库，可通过api配置WiFi网络，支持GET和POST请求配置；可通过微信小程序配网(小程序名：配网库)；可通过默认网页配置WiFi网络；可自定义配网页面。
+一个为esp8266和esp32设计的简单易用Arduino配网库，可通过api配置WiFi网络，支持GET和POST请求配置；可通过微信小程序配网(小程序名：配网库)；可通过默认网页配置WiFi网络；可自定义配网页面；可通过OTA网页升级程序固件。
 
 
 ## [查看开发文档【必看】](https://www.cbug.top/1app/bgwificonfig/#/)
@@ -55,7 +55,19 @@ UMSG机制共可存取12组自定义数据，在api配网或自定义网页配�
 ```
 ## eeshow模式
 ```
-解决部分手机因自身网络优化造成配网WiFi自动断开的问题，以及实现了连接配网WiFi后自动跳转到配网页面的功能，需使用BGWiFiConfig配置助手进行配置。
+解决部分手机因自身网络优化造成配网WiFi自动断开的问题，以及实现了连接配网WiFi后自动跳转到配网页面的功能，需使用宏定义或BGWiFiConfig配置助手进行配置(需#define exe)。
+```
+## OTA升级
+```
+通过OTA网页升级程序固件，可以结合配网使用，也可单独使用(需#define onlyota)，主要函数：OTAbegin()、OTALoop()，具体用法请参考开发文档和demo程序。
+```
+## 宏定义
+```
+#define eeshow      //宏定义开启eeshow
+#define eeshowM 0   //宏定义指定eeshow弹起页面(0.导航页面,1.默认页面,2.自定义页面)
+#define exe         //使用BGWiFiConfig配置助手配置eeshow
+#define onlyota     //只使用OTA功能,不使用配网功能
+#include <BGWiFiConfig.h>
 ```
 ## 友情提示
 ```

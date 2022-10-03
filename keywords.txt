@@ -39,6 +39,14 @@ readWiFi		KEYWORD2
 offConnectWiFi	KEYWORD2
 setApiRet		KEYWORD2
 OK	KEYWORD2
+OTAbegin		KEYWORD2
+OTALoop		KEYWORD2
+getOTAIP		KEYWORD2
+setOTAhtml	KEYWORD2
+setOTATimeOut	KEYWORD2
+setOTAWiFiSTA	KEYWORD2
+setOTAWiFiAP	KEYWORD2
+setOTAWiFiAPSTA	KEYWORD2
 
 
 #######################################
