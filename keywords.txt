@@ -1,8 +1,8 @@
 #######################################
 
-# Syntax Coloring Map For BGWiFiConfig	
+# Syntax Coloring Map For BGWiFiConfig
 
-####################################### 
+#######################################
 
 # Class (KEYWORD1)
 
@@ -18,7 +18,7 @@ BGWiFiConfig	KEYWORD1
 
 # Methods and Functions (KEYWORD2)
 
-#######################################	
+#######################################
 
 
 begin	KEYWORD2
@@ -47,11 +47,16 @@ setOTATimeOut	KEYWORD2
 setOTAWiFiSTA	KEYWORD2
 setOTAWiFiAP	KEYWORD2
 setOTAWiFiAPSTA	KEYWORD2
-
+setConFailReset		KEYWORD2
+useSpaceWiFi	KEYWORD2
+exe	KEYWORD2
+eeshow		KEYWORD2
+eeshowM	KEYWORD2
+onlyota		KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
 #######################################
- 
+
 
 wifipw	LITERAL1

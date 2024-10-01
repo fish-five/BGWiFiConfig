@@ -46,71 +46,77 @@
 #define onlyotaTAG false
 #endif
 
-class BGWiFiConfig
-{
-  private:
-    String TAG, MODE, SSID, PWD, IP, GATEWAY, SUBNET, DNS;
-    String APssid, APpwd;
-    static String StrsUMSG[13];
-    static String StrApiRet[2];
-    static String mhtml, mhtmlresult, runTAG, OTAserverIndex;
-    int SECtime = 30;
-    int OTASECtime = 3600;
-    static int UMSGnum;
-    bool  booloutwifiset = false;
-    bool  booloffconnectwifi = false;
-    bool  OTASECtimeTAG = false;
-    static bool boolautostart;
-    static bool booloffSerial;
-    static void mySerial(String str, bool nend);
-    IPAddress otapip[3];
-    void debugPZ();
-    void APstart();
-    void StrCL(String str);
-    void StrCL_UMSG(String str);
-    void STA_M1(String Mname, String Mssid);
-    void STA_M2(String Mname, String Mssid, String Mlocal_IP, String Mgateway, String Msubnet, String Mdns);
-    static void delay_rst();
-    static void WRhtml();
-    static void WRhtmlresult();
-    static void WRindex();
-    static void WRresult();
-    static void WRapi();
-    static void WRindexDH();
-    IPAddress StrToIP(String str);
-    static bool FS_W(String str);
-    String FS_R();
-    static bool FS_W_UMSG(String str);
-    String FS_R_UMSG();
-    void clOTAPIP(String ip);
+class BGWiFiConfig {
+private:
+  String TAG, MODE, SSID, PWD, IP, GATEWAY, SUBNET, DNS;
+  String APssid, APpwd;
+  static String StrsUMSG[13];
+  static String StrApiRet[2];
+  static String mhtml, mhtmlresult, runTAG, OTAserverIndex;
+  int SECtime = 30;
+  int OTASECtime = 3600;
+  int gReConNum = 0;
+  static int UMSGnum;
+  bool booloutwifiset = false;
+  bool booloffconnectwifi = false;
+  bool OTASECtimeTAG = false;
+  bool boolConFailResetTag = false;
+  bool boolConFailResetIsReboot = false;
+  static bool boolSpaceWiFiTag;
+  static bool boolautostart;
+  static bool booloffSerial;
+  static void mySerial(String str, bool nend);
+  IPAddress otapip[3];
+  void debugPZ();
+  void APstart();
+  void StrCL(String str);
+  void StrCL_UMSG(String str);
+  void STA_M1(String Mname, String Mssid);
+  void STA_M2(String Mname, String Mssid, String Mlocal_IP, String Mgateway, String Msubnet, String Mdns);
+  static void delay_rst();
+  static void WRhtml();
+  static void WRhtmlresult();
+  static void WRindex();
+  static void WRresult();
+  static void WRapi();
+  static void WRindexDH();
+  IPAddress StrToIP(String str);
+  static bool FS_W(String str);
+  String FS_R();
+  static bool FS_W_UMSG(String str);
+  String FS_R_UMSG();
+  void clOTAPIP(String ip);
+  void STA_M3_FailReset();
 
-  public:
-    void begin();
-    void Loop();
-    void clearWiFi();
-    void setPWWiFi(String ssid, String pwd);
-    void setWiFiTimeOut(int sectime);
-    void setZDYhtml(String html);
-    void setZDYhtmlret(String html);
-    void outWiFiSET(bool tag);
-    void offSerial(bool tag);
-    void autoStart(bool tag);
-    void offConnectWiFi(bool tag);
-    void setNumUMSG(int i);
-    String readUMSG(int i);
-    String readWiFi(int i);
-    String retRUNTAG();
-    String retWiFiSET();
-    bool OK(bool tag = false);
-    String& setApiRet(int i);
-    void OTAbegin();
-    void OTALoop();
-    String getOTAIP();
-    void setOTAhtml(String html);
-    void setOTATimeOut(int sectime);
-    void setOTAWiFiSTA(String ssid, String pwd);
-    void setOTAWiFiAP(String ssid, String pwd, String ip = "192.168.33.33");
-    void setOTAWiFiAPSTA(String APssid, String APpwd, String STAssid, String STApwd , String ip = "192.168.33.33");
+public:
+  void begin();
+  void Loop();
+  void clearWiFi();
+  void setPWWiFi(String ssid, String pwd);
+  void setWiFiTimeOut(int sectime);
+  void setZDYhtml(String html);
+  void setZDYhtmlret(String html);
+  void outWiFiSET(bool tag);
+  void offSerial(bool tag);
+  void autoStart(bool tag);
+  void offConnectWiFi(bool tag);
+  void setNumUMSG(int i);
+  String readUMSG(int i);
+  String readWiFi(int i);
+  String retRUNTAG();
+  String retWiFiSET();
+  bool OK(bool tag = false);
+  String& setApiRet(int i);
+  void OTAbegin();
+  void OTALoop();
+  String getOTAIP();
+  void setOTAhtml(String html);
+  void setOTATimeOut(int sectime);
+  void setOTAWiFiSTA(String ssid, String pwd);
+  void setOTAWiFiAP(String ssid, String pwd, String ip = "192.168.33.33");
+  void setOTAWiFiAPSTA(String APssid, String APpwd, String STAssid, String STApwd, String ip = "192.168.33.33");
+  void setConFailReset(int xReConNum = 0, int xReConTime = 30, bool xIsReboot = false);
+  void useSpaceWiFi(bool xSpaceWiFiTag = false);
 };
 #endif
 
@@ -141,21 +147,15 @@ ESP8266WebServer OTAserver(80);
 
 bool BGWiFiConfig::booloffSerial = false;
 bool BGWiFiConfig::boolautostart = false;
+bool BGWiFiConfig::boolSpaceWiFiTag = false;
 String BGWiFiConfig::mhtml = "";
 String BGWiFiConfig::mhtmlresult = "";
 String BGWiFiConfig::runTAG = "";
-String BGWiFiConfig::StrsUMSG[13] = {"NULL"};
-String BGWiFiConfig::StrApiRet[2] = {"NULL"};
+String BGWiFiConfig::StrsUMSG[13] = { "NULL" };
+String BGWiFiConfig::StrApiRet[2] = { "NULL" };
 int BGWiFiConfig::UMSGnum = 0;
 String BGWiFiConfig::OTAserverIndex =
-  String("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">") +
-  String("<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">") +
-  String("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no\">") +
-  String("<title>BGWiFiConfigOTA</title><style>.center {margin: auto;width: 20%;") +
-  String("border: 10px solid #20B2AA;padding: 100px;}</style></head>") +
-  String("<body><div class=\"center\"><div style=\"text-align: center;\"><h3>OTA在线升级(bin文件)</h3></div>") +
-  String("<form method='POST' action='/otaupdate' enctype='multipart/form-data'><input type='file' name='otaupdate'>") +
-  String("<br><br><input type='submit' value='开始升级'></form></div></body></html>");
+  String("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">") + String("<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">") + String("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no\">") + String("<title>BGWiFiConfigOTA</title><style>.center {margin: auto;width: 20%;") + String("border: 10px solid #20B2AA;padding: 100px;}</style></head>") + String("<body><div class=\"center\"><div style=\"text-align: center;\"><h3>OTA在线升级(bin文件)</h3></div>") + String("<form method='POST' action='/otaupdate' enctype='multipart/form-data'><input type='file' name='otaupdate'>") + String("<br><br><input type='submit' value='开始升级'></form></div></body></html>");
 
 
 void BGWiFiConfig::Loop() {
@@ -165,45 +165,45 @@ void BGWiFiConfig::Loop() {
   }
 }
 
-void BGWiFiConfig:: clearWiFi() {
+void BGWiFiConfig::clearWiFi() {
   SPIFFS.format();
   WiFi.disconnect();
 }
 
-void BGWiFiConfig:: setPWWiFi(String ssid, String pwd) {
+void BGWiFiConfig::setPWWiFi(String ssid, String pwd) {
   APssid = ssid;
   APpwd = pwd;
 }
 
-void BGWiFiConfig:: setWiFiTimeOut(int sectime) {
+void BGWiFiConfig::setWiFiTimeOut(int sectime) {
   SECtime = sectime;
 }
 
-void BGWiFiConfig:: setNumUMSG(int umsgnum) {
+void BGWiFiConfig::setNumUMSG(int umsgnum) {
   UMSGnum = umsgnum;
 }
 
-void BGWiFiConfig:: setZDYhtml(String html) {
+void BGWiFiConfig::setZDYhtml(String html) {
   mhtml = html;
 }
 
-void BGWiFiConfig:: setZDYhtmlret(String html) {
+void BGWiFiConfig::setZDYhtmlret(String html) {
   mhtmlresult = html;
 }
 
-void BGWiFiConfig:: outWiFiSET(bool tag) {
+void BGWiFiConfig::outWiFiSET(bool tag) {
   booloutwifiset = tag;
 }
 
-void BGWiFiConfig:: offSerial(bool tag) {
+void BGWiFiConfig::offSerial(bool tag) {
   booloffSerial = tag;
 }
 
-void BGWiFiConfig:: autoStart(bool tag) {
+void BGWiFiConfig::autoStart(bool tag) {
   boolautostart = tag;
 }
 
-void BGWiFiConfig:: delay_rst() {
+void BGWiFiConfig::delay_rst() {
   /**
     #ifdef ESP32
     unsigned long onetime=millis();
@@ -219,14 +219,14 @@ void BGWiFiConfig:: delay_rst() {
   delay(2000);
 }
 
-String BGWiFiConfig:: retRUNTAG() {
+String BGWiFiConfig::retRUNTAG() {
   if (runTAG != "") {
     return runTAG;
   }
   return "获取失败,该函数必需放于begin()函数之后";
 }
 
-String BGWiFiConfig:: retWiFiSET() {
+String BGWiFiConfig::retWiFiSET() {
   String str = FS_R();
   str.trim();
   if (str.length() > 8)
@@ -234,28 +234,32 @@ String BGWiFiConfig:: retWiFiSET() {
   return "未查询到配置信息";
 }
 
-void BGWiFiConfig:: begin() {
+void BGWiFiConfig::begin() {
   Serial.println();
   Serial.println();
   if (SPIFFS.begin()) {
     StrCL(FS_R());
     if (TAG == "OFF" && !booloffconnectwifi) {
-      if (UMSGnum > 0 && UMSGnum < 13 )
+      if (UMSGnum > 0 && UMSGnum < 13)
         StrCL_UMSG(FS_R_UMSG());
-      if (MODE == "2") {
-        STA_M2(SSID, PWD, IP, GATEWAY, SUBNET, DNS);
+      if(boolConFailResetTag){
+        STA_M3_FailReset();
         debugPZ();
-      } else {
-        STA_M1(SSID, PWD);
-        debugPZ();
+      }else{  
+        if (MODE == "2") {
+          STA_M2(SSID, PWD, IP, GATEWAY, SUBNET, DNS);
+          debugPZ();
+        } else {
+          STA_M1(SSID, PWD);
+          debugPZ();
+        }
       }
     } else if (TAG == "OFF" && booloffconnectwifi) {
       mySerial("....user wificode start....", true);
-      if (UMSGnum > 0 && UMSGnum < 13 )
+      if (UMSGnum > 0 && UMSGnum < 13)
         StrCL_UMSG(FS_R_UMSG());
       debugPZ();
-    }
-    else {
+    } else {
       mySerial("欢迎使用BGWiFiConfig配网程序！！", true);
       Serial.println();
       APstart();
@@ -331,7 +335,7 @@ void BGWiFiConfig::mySerial(String str, bool nend) {
   }
 }
 
-void BGWiFiConfig:: debugPZ() {
+void BGWiFiConfig::debugPZ() {
   if (booloutwifiset) {
     Serial.println("WiFi配网信息：>>>");
     Serial.print("TAG:");
@@ -354,7 +358,7 @@ void BGWiFiConfig:: debugPZ() {
   }
 }
 
-void BGWiFiConfig:: APstart() {
+void BGWiFiConfig::APstart() {
   WiFi.softAPConfig(StrToIP("192.168.22.22"),
                     StrToIP("192.168.22.1"),
                     StrToIP("255.255.255.0"));
@@ -389,7 +393,7 @@ void BGWiFiConfig:: APstart() {
   mySerial("<<<<<end<<<", true);
 }
 
-void BGWiFiConfig:: StrCL(String str) {
+void BGWiFiConfig::StrCL(String str) {
   if (str != "NULL") {
     int tagNum = str.indexOf("tag=");
     int modeNum = str.indexOf("mode=");
@@ -414,7 +418,7 @@ void BGWiFiConfig:: StrCL(String str) {
   }
 }
 
-void BGWiFiConfig:: STA_M1(String Mname, String Mssid) {
+void BGWiFiConfig::STA_M1(String Mname, String Mssid) {
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
   WiFi.begin(Mname.c_str(), Mssid.c_str());
@@ -425,13 +429,16 @@ void BGWiFiConfig:: STA_M1(String Mname, String Mssid) {
   mySerial("]:", false);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000); mySerial(",", false);
+    delay(1000);
+    mySerial(",", false);
     i++;
     mySerial(String(i), false);
     if (i > SECtime - 1) {
       Serial.println();
-      runTAG = "连接失败，未成功连接WiFi[" + SSID + "]";
-      mySerial("WiFi连接超时,请重试", true);
+      if(!boolConFailResetTag){
+        runTAG = "连接失败，未成功连接WiFi[" + SSID + "]";
+        mySerial("WiFi连接超时,请重试", true);
+      }
       break;
     }
   }
@@ -446,7 +453,7 @@ void BGWiFiConfig:: STA_M1(String Mname, String Mssid) {
   Serial.println();
 }
 
-void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String Mgateway, String Msubnet, String Mdns) {
+void BGWiFiConfig::STA_M2(String Mname, String Mssid, String Mlocal_IP, String Mgateway, String Msubnet, String Mdns) {
   WiFi.disconnect();
   if (!WiFi.config(StrToIP(Mlocal_IP), StrToIP(Mgateway), StrToIP(Msubnet), StrToIP(Mdns))) {
     mySerial("WiFi设置失败", true);
@@ -460,13 +467,16 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
   mySerial("]:", false);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000); mySerial(",", false);
+    delay(1000);
+    mySerial(",", false);
     i++;
     mySerial(String(i), false);
     if (i > SECtime - 1) {
       Serial.println();
-      runTAG = "连接失败，未成功连接WiFi[" + SSID + "]";
-      mySerial("WiFi连接超时,请重试", true);
+      if(!boolConFailResetTag){
+        runTAG = "连接失败，未成功连接WiFi[" + SSID + "]";
+        mySerial("WiFi连接超时,请重试", true);
+      }
       break;
     }
   }
@@ -482,7 +492,7 @@ void BGWiFiConfig:: STA_M2(String Mname, String Mssid, String Mlocal_IP, String 
 }
 
 
-void BGWiFiConfig:: WRindexDH() {
+void BGWiFiConfig::WRindexDH() {
   String dhhtml = String("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">")
                   + String("<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" ")
                   + String("content=\"width=device-width, initial-scale=1.0\"><title>BGWiFiConfig配网 </title > ")
@@ -501,10 +511,10 @@ void BGWiFiConfig:: WRindexDH() {
   }
 }
 
-void BGWiFiConfig:: WRhtml() {
+void BGWiFiConfig::WRhtml() {
   WFconfigserver.send(200, "text/html", mhtml);
 }
-void BGWiFiConfig:: WRhtmlresult() {
+void BGWiFiConfig::WRhtmlresult() {
   String retStr;
   String mode = WFconfigserver.arg("mode");
   String ssid = WFconfigserver.arg("ssid");
@@ -521,9 +531,8 @@ void BGWiFiConfig:: WRhtmlresult() {
   }
 
   if (UMSGnum > 0) {
-    String UMSGNAME[12] = {"umsg1", "umsg2", "umsg3", "umsg4", "umsg5", "umsg6",
-                           "umsg7", "umsg8", "umsg9", "umsg10", "umsg11", "umsg12"
-                          };
+    String UMSGNAME[12] = { "umsg1", "umsg2", "umsg3", "umsg4", "umsg5", "umsg6",
+                            "umsg7", "umsg8", "umsg9", "umsg10", "umsg11", "umsg12" };
     String retStr2 = "";
     for (int i = 0; i < UMSGnum; i++) {
       StrsUMSG[i] = WFconfigserver.arg(UMSGNAME[i]);
@@ -537,8 +546,7 @@ void BGWiFiConfig:: WRhtmlresult() {
     retStr2.trim();
     retStr2 = retStr2 + "=umsg=";
     retStr2.replace(" ", "");
-    if (FS_W_UMSG(retStr2))
-    {
+    if (FS_W_UMSG(retStr2)) {
       mySerial(">> UMSG Write OK", true);
       mySerial(">> 自定义信息已写入：", false);
       mySerial(String(UMSGnum), false);
@@ -548,7 +556,9 @@ void BGWiFiConfig:: WRhtmlresult() {
   }
 
   if (ssid != "" && ssid != NULL) {
-    retStr.replace(" ", "");
+    if(!boolSpaceWiFiTag){
+      retStr.replace(" ", "");
+    }
     if (FS_W(retStr)) {
       if (mhtmlresult != "") {
         WFconfigserver.send(200, "text/html", mhtmlresult);
@@ -556,8 +566,7 @@ void BGWiFiConfig:: WRhtmlresult() {
           delay_rst();
           ESP.restart();
         }
-      }
-      else {
+      } else {
         if (boolautostart) {
           WFconfigserver.send(200, "text/plain", "ok, zdyhtml, mode=" + mode + ", The board has rebooted!");
           delay_rst();
@@ -570,7 +579,7 @@ void BGWiFiConfig:: WRhtmlresult() {
   }
 }
 
-void BGWiFiConfig:: WRindex() {
+void BGWiFiConfig::WRindex() {
   String time = "";
 #ifdef ESP32
   time = "12";
@@ -589,35 +598,37 @@ void BGWiFiConfig:: WRindex() {
   String ret = String("<!DOCTYPE html> <html lang=\"zh-CN\"> <head> <meta charset=\"UTF-8\"><title>BGWiFiConfig配网</title>")
                + String("<style> .input { border: 2px solid orange; padding: 10px; border-radius: 50px 20px; } .toptext { text-shadow: 5px 5px 5px #4e1f1f; } .button { display: inline-block; padding: 15px 25px; font-size: 24px; cursor: pointer; text-align: center; text-decoration: none; outline: none; color: #fff; background-color: #4CAF50; border: none; border-radius: 15px; box-shadow: 0 9px #999; } .button:hover { background-color: #3e8e41 } .button:active { background-color: #3e8e41; box-shadow: 0 5px #666; transform: translateY(4px); } </style>")
                + String("</head><body><center><form action=\"result\" method=\"post\">")
-               + String( "<h2 class=\"toptext\">配网</h2>")
-               + String( "<h4>WiFi名称：<input class=\"input\" type=text name=ssid /></h4>")
-               + String( "<h4>WiFi密码：<input class=\"input\" type=text name=pwd /></h4>")
-               + String( "<p>&nbsp;&nbsp;>>预计需要" + time + "秒</p>")
-               + String( "<input class=\"button\" type=\"submit\" value=\" 开始配网\"></form></center></body></html>");
+               + String("<h2 class=\"toptext\">配网</h2>")
+               + String("<h4>WiFi名称：<input class=\"input\" type=text name=ssid /></h4>")
+               + String("<h4>WiFi密码：<input class=\"input\" type=text name=pwd /></h4>")
+               + String("<p>&nbsp;&nbsp;>>预计需要" + time + "秒</p>")
+               + String("<input class=\"button\" type=\"submit\" value=\" 开始配网\"></form></center></body></html>");
   WFconfigserver.send(200, "text/html", ret);
 }
-void BGWiFiConfig:: WRresult() {
+void BGWiFiConfig::WRresult() {
   String ssid = WFconfigserver.arg("ssid");
   String pwd = WFconfigserver.arg("pwd");
   String retStr = "tag=OFF,mode=1,ssid=" + ssid + ",pwd=" + pwd;
   String ret = String("<html><head><meta charset=\"utf-8\"><title>BGWiFiConfig配网</title></head><body>")
                + String("<center>")
-               + String( "<h2>配网写入结果</h2>")
-               + String( "<h2>已配置WiFi名称：" + ssid + "</h2>")
-               + String( "<h2>已配置WiFi密码:" +  pwd + "</h2>")
-               + String( "<p>确认无误后，请退出页面，并重启开发板</p>")
-               + String( "<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
+               + String("<h2>配网写入结果</h2>")
+               + String("<h2>已配置WiFi名称：" + ssid + "</h2>")
+               + String("<h2>已配置WiFi密码:" + pwd + "</h2>")
+               + String("<p>确认无误后，请退出页面，并重启开发板</p>")
+               + String("<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
 
   String ret2 = String("<html><head><meta charset=\"utf-8\"><title>BGWiFiConfig配网</title></head><body>")
                 + String("<center>")
-                + String( "<h2>配网写入结果</h2>")
-                + String( "<h2>已配置WiFi名称：" + ssid + "</h2>")
-                + String( "<h2>已配置WiFi密码：" +  pwd + "</h2>")
-                + String( "<p>已调用autoStart()函数，已自动重启开发板，请观察串口输出！！</p>")
-                + String( "<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
+                + String("<h2>配网写入结果</h2>")
+                + String("<h2>已配置WiFi名称：" + ssid + "</h2>")
+                + String("<h2>已配置WiFi密码：" + pwd + "</h2>")
+                + String("<p>已调用autoStart()函数，已自动重启开发板，请观察串口输出！！</p>")
+                + String("<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
   if (ssid != "" && ssid != NULL) {
-    retStr.replace(" ", "");
-    if ( FS_W(retStr)) {
+    if(!boolSpaceWiFiTag){
+      retStr.replace(" ", "");
+    }
+    if (FS_W(retStr)) {
       if (boolautostart) {
         WFconfigserver.send(200, "text/html", ret2);
         delay_rst();
@@ -629,7 +640,7 @@ void BGWiFiConfig:: WRresult() {
   }
 }
 
-void BGWiFiConfig:: WRapi() {
+void BGWiFiConfig::WRapi() {
   String retStr = "";
   String mode = WFconfigserver.arg("mode");
   String ssid = WFconfigserver.arg("ssid");
@@ -646,9 +657,8 @@ void BGWiFiConfig:: WRapi() {
   }
 
   if (UMSGnum > 0) {
-    String UMSGNAME[12] = {"umsg1", "umsg2", "umsg3", "umsg4", "umsg5", "umsg6",
-                           "umsg7", "umsg8", "umsg9", "umsg10", "umsg11", "umsg12"
-                          };
+    String UMSGNAME[12] = { "umsg1", "umsg2", "umsg3", "umsg4", "umsg5", "umsg6",
+                            "umsg7", "umsg8", "umsg9", "umsg10", "umsg11", "umsg12" };
     String retStr2 = "";
     for (int i = 0; i < UMSGnum; i++) {
       StrsUMSG[i] = WFconfigserver.arg(UMSGNAME[i]);
@@ -662,8 +672,7 @@ void BGWiFiConfig:: WRapi() {
     retStr2.trim();
     retStr2 = retStr2 + "=umsg=";
     retStr2.replace(" ", "");
-    if (FS_W_UMSG(retStr2))
-    {
+    if (FS_W_UMSG(retStr2)) {
       mySerial(">>UMSG Write OK", true);
       mySerial(">>自定义信息已写入：", false);
       mySerial(String(UMSGnum), false);
@@ -672,13 +681,27 @@ void BGWiFiConfig:: WRapi() {
     }
   }
 
-  retStr.replace(" ", "");
+  if(!boolSpaceWiFiTag){
+    retStr.replace(" ", "");
+  }
   if (FS_W(retStr)) {
     if (StrApiRet[0] != NULL && StrApiRet[0] != "NULL" && StrApiRet[0] != "") {
       if (StrApiRet[1] == "addWiFi") {
-        WFconfigserver.send(200, "text/plain", StrApiRet[0] + ">>[" + mode + "," + ssid + "," + pwd + "]<<");
+        if(boolautostart) {
+          WFconfigserver.send(200, "text/plain", StrApiRet[0] + ">>[" + mode + "," + ssid + "," + pwd + "]<<");
+          delay_rst();
+          ESP.restart();
+        } else{
+          WFconfigserver.send(200, "text/plain", StrApiRet[0] + ">>[" + mode + "," + ssid + "," + pwd + "]<<");
+        }
       } else {
-        WFconfigserver.send(200, "text/plain", StrApiRet[0]);
+        if(boolautostart){
+          WFconfigserver.send(200, "text/plain", StrApiRet[0]);
+          delay_rst();
+          ESP.restart();
+        }else{
+          WFconfigserver.send(200, "text/plain", StrApiRet[0]);
+        }
       }
     } else {
       if (boolautostart) {
@@ -693,13 +716,13 @@ void BGWiFiConfig:: WRapi() {
 }
 
 
-IPAddress BGWiFiConfig:: StrToIP(String str) {
+IPAddress BGWiFiConfig::StrToIP(String str) {
   IPAddress ipadd;
   ipadd.fromString(str);
   return ipadd;
 }
 
-bool BGWiFiConfig:: FS_W(String str) {
+bool BGWiFiConfig::FS_W(String str) {
   if (UMSGnum < 1)
     SPIFFS.format();
   File dataFile = SPIFFS.open("/bgwificonfig/wifiset.txt", "w");
@@ -716,7 +739,7 @@ bool BGWiFiConfig:: FS_W(String str) {
   return true;
 }
 
-String BGWiFiConfig:: FS_R() {
+String BGWiFiConfig::FS_R() {
   if (!SPIFFS.exists("/bgwificonfig/wifiset.txt")) {
     return "NULL";
   }
@@ -729,7 +752,7 @@ String BGWiFiConfig:: FS_R() {
   return retStr;
 }
 
-bool BGWiFiConfig:: FS_W_UMSG(String str) {
+bool BGWiFiConfig::FS_W_UMSG(String str) {
   SPIFFS.format();
   File dataFile = SPIFFS.open("/bgwificonfig/umsg.txt", "w");
   dataFile.print(str);
@@ -739,12 +762,12 @@ bool BGWiFiConfig:: FS_W_UMSG(String str) {
   return true;
 }
 
-String BGWiFiConfig:: FS_R_UMSG() {
+String BGWiFiConfig::FS_R_UMSG() {
   if (!SPIFFS.exists("/bgwificonfig/umsg.txt")) {
     return "NULL";
   }
   File dataFile = SPIFFS.open("/bgwificonfig/umsg.txt", "r");
-  String retStr ;
+  String retStr;
   for (int i = 0; i < dataFile.size(); i++) {
     retStr += (char)dataFile.read();
   }
@@ -752,7 +775,7 @@ String BGWiFiConfig:: FS_R_UMSG() {
   return retStr;
 }
 
-void BGWiFiConfig:: StrCL_UMSG(String str) {
+void BGWiFiConfig::StrCL_UMSG(String str) {
   if (str != "NULL" && str != "" && str != NULL && UMSGnum > 0 && UMSGnum < 13) {
     str.trim();
     String umsgname[13] = {
@@ -761,18 +784,18 @@ void BGWiFiConfig:: StrCL_UMSG(String str) {
       "umsg7=", "umsg8=", "umsg9=",
       "umsg10=", "umsg11=", "umsg12=", "=umsg="
     };
-    int umsgkey[13] = { -1};
+    int umsgkey[13] = { -1 };
     for (int i = 0; i < UMSGnum + 1; i++) {
       umsgkey[i] = str.indexOf(umsgname[i]);
     }
     for (int j = 0; j < UMSGnum - 1; j++) {
       StrsUMSG[j] = str.substring(umsgkey[j] + umsgname[j].length(), umsgkey[j + 1]);
     }
-    StrsUMSG[UMSGnum - 1] = str.substring(umsgkey[UMSGnum - 1] + umsgname[UMSGnum - 1].length(), str.indexOf(umsgname[12]) );
+    StrsUMSG[UMSGnum - 1] = str.substring(umsgkey[UMSGnum - 1] + umsgname[UMSGnum - 1].length(), str.indexOf(umsgname[12]));
   }
 }
 
-String BGWiFiConfig:: readUMSG(int i) {
+String BGWiFiConfig::readUMSG(int i) {
   if (UMSGnum > 0 && i < 13 && i > 0 && TAG == "OFF") {
     StrsUMSG[i - 1].trim();
     if (StrsUMSG[i - 1] != NULL && StrsUMSG[i - 1] != "" && StrsUMSG[i - 1] != "NULL")
@@ -781,11 +804,11 @@ String BGWiFiConfig:: readUMSG(int i) {
   return "NULL";
 }
 
-void BGWiFiConfig:: offConnectWiFi(bool tag) {
+void BGWiFiConfig::offConnectWiFi(bool tag) {
   booloffconnectwifi = tag;
 }
 
-String BGWiFiConfig:: readWiFi(int i) {
+String BGWiFiConfig::readWiFi(int i) {
   String str = FS_R();
   if (i == 0) {
     return str.substring(str.indexOf(",ssid=") + 6, str.indexOf(",pwd="));
@@ -800,12 +823,12 @@ String BGWiFiConfig:: readWiFi(int i) {
   return "NULL";
 }
 
-String& BGWiFiConfig:: setApiRet(int i) {
+String& BGWiFiConfig::setApiRet(int i) {
   String& str = StrApiRet[i];
   return str;
 }
 
-bool BGWiFiConfig:: OK(bool tag) {
+bool BGWiFiConfig::OK(bool tag) {
   String str = "";
   str = FS_R();
   str = str.substring(str.indexOf(",ssid=") + 6, str.indexOf(",pwd="));
@@ -825,37 +848,36 @@ bool BGWiFiConfig:: OK(bool tag) {
 }
 
 
-void BGWiFiConfig:: setOTAhtml(String html) {
+void BGWiFiConfig::setOTAhtml(String html) {
   if (html.length() > 15) {
     OTAserverIndex = html;
   }
 }
 
-void BGWiFiConfig:: setOTATimeOut(int sectime) {
+void BGWiFiConfig::setOTATimeOut(int sectime) {
   if (sectime > 1) {
     OTASECtimeTAG = true;
     OTASECtime = sectime;
   }
 }
 
-String BGWiFiConfig:: getOTAIP() {
+String BGWiFiConfig::getOTAIP() {
   if (onlyotaTAG) {
-    if ( (WiFi.softAPgetStationNum() > 0) && WiFi.isConnected())
+    if ((WiFi.softAPgetStationNum() > 0) && WiFi.isConnected())
       return "[{AP:" + WiFi.softAPIP().toString() + "},{STA:" + WiFi.localIP().toString() + "}]";
     else if (WiFi.isConnected())
       return WiFi.localIP().toString();
     else if (WiFi.softAPgetStationNum() > 0)
       return WiFi.softAPIP().toString();
-  }
-  else {
+  } else {
     if (OK(true))
       return WiFi.localIP().toString();
   }
   return "WiFi就绪后，才能获取";
 }
 
-void BGWiFiConfig:: OTAbegin() {
-  if (TAG == "OFF" || onlyotaTAG ) {
+void BGWiFiConfig::OTAbegin() {
+  if (TAG == "OFF" || onlyotaTAG) {
     Serial.println();
     mySerial("欢迎使用BGWiFiConfig-OTA程序！！", true);
     int ii = 0;
@@ -870,7 +892,7 @@ void BGWiFiConfig:: OTAbegin() {
         }
       }
     } else {
-      while (!OK(true) && TAG == "OFF" ) {
+      while (!OK(true) && TAG == "OFF") {
         delay(1000);
         Serial.println("OTA等待WiFi就绪...");
         ii++;
@@ -886,31 +908,33 @@ void BGWiFiConfig:: OTAbegin() {
         OTAserver.sendHeader("Connection", "close");
         OTAserver.send(200, "text/html", OTAserverIndex);
       });
-      OTAserver.on("/otaupdate", HTTP_POST, []() {
-        OTAserver.sendHeader("Connection", "close");
-        OTAserver.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-        ESP.restart();
-      }, []() {
-        HTTPUpload& upload = OTAserver.upload();
-        if (upload.status == UPLOAD_FILE_START) {
-          Serial.printf("OTA上传文件名: %s\n", upload.filename.c_str());
-          uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-          if (!Update.begin(maxSketchSpace)) {
+      OTAserver.on(
+        "/otaupdate", HTTP_POST, []() {
+          OTAserver.sendHeader("Connection", "close");
+          OTAserver.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+          ESP.restart();
+        },
+        []() {
+          HTTPUpload& upload = OTAserver.upload();
+          if (upload.status == UPLOAD_FILE_START) {
+            Serial.printf("OTA上传文件名: %s\n", upload.filename.c_str());
+            uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+            if (!Update.begin(maxSketchSpace)) {
+            }
+          } else if (upload.status == UPLOAD_FILE_WRITE) {
+            if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+            }
+          } else if (upload.status == UPLOAD_FILE_END) {
+            if (Update.end(true)) {
+              OTAserver.send(200, "text/plain", "Upload successfully: " + String(upload.totalSize) + "byte\nRestart to run the new program...");
+              Serial.printf("成功上传: %u字节\n正在重启运行上传的程序...\n", upload.totalSize);
+            } else {
+              OTAserver.send(200, "text/plain", "ota update failed, please try again");
+              Serial.printf("OTA上传失败，请重试！！");
+            }
           }
-        } else if (upload.status == UPLOAD_FILE_WRITE) {
-          if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-          }
-        } else if (upload.status == UPLOAD_FILE_END) {
-          if (Update.end(true)) {
-            OTAserver.send(200, "text/plain", "Upload successfully: " + String(upload.totalSize) + "byte\nRestart to run the new program...");
-            Serial.printf("成功上传: %u字节\n正在重启运行上传的程序...\n", upload.totalSize);
-          } else {
-            OTAserver.send(200, "text/plain", "ota update failed, please try again");
-            Serial.printf("OTA上传失败，请重试！！");
-          }
-        }
-        yield();
-      });
+          yield();
+        });
       OTAserver.begin();
       String Tmsg = "";
       mySerial("BGWiFiConfig-OTA启动成功~~~", true);
@@ -928,18 +952,18 @@ void BGWiFiConfig:: OTAbegin() {
   }
 }
 
-void BGWiFiConfig:: OTALoop() {
+void BGWiFiConfig::OTALoop() {
   if (TAG == "OFF" || onlyotaTAG) {
     OTAserver.handleClient();
   }
 }
 
-void BGWiFiConfig:: setOTAWiFiSTA(String ssid, String pwd) {
+void BGWiFiConfig::setOTAWiFiSTA(String ssid, String pwd) {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid.c_str(), pwd.c_str());
 }
 
-void BGWiFiConfig:: clOTAPIP(String ip) {
+void BGWiFiConfig::clOTAPIP(String ip) {
   String ipstrs[4];
   ipstrs[0] = ip.substring(0, ip.indexOf("."));
   ipstrs[1] = ip.substring(ipstrs[0].length() + 1, ip.indexOf(".", ipstrs[0].length() + 1));
@@ -948,7 +972,7 @@ void BGWiFiConfig:: clOTAPIP(String ip) {
   String mip = ip;
   mip.replace(" ", "");
   String gateway = "192.168.33.33";
-  gateway =  ipstrs[0] + "." + ipstrs[1] + " ." + ipstrs[2] + ".1";
+  gateway = ipstrs[0] + "." + ipstrs[1] + " ." + ipstrs[2] + ".1";
   gateway.replace(" ", "");
   String subnet = "255.255.255.0";
   ipstrs[0].replace(" ", "");
@@ -964,7 +988,7 @@ void BGWiFiConfig:: clOTAPIP(String ip) {
   otapip[2] = StrToIP(subnet);
 }
 
-void BGWiFiConfig:: setOTAWiFiAP(String ssid, String pwd, String ip) {
+void BGWiFiConfig::setOTAWiFiAP(String ssid, String pwd, String ip) {
   if (onlyotaTAG) {
     clOTAPIP(ip);
     WiFi.mode(WIFI_AP);
@@ -976,7 +1000,7 @@ void BGWiFiConfig:: setOTAWiFiAP(String ssid, String pwd, String ip) {
   }
 }
 
-void BGWiFiConfig::setOTAWiFiAPSTA(String APssid, String APpwd, String STAssid, String STApwd , String ip ) {
+void BGWiFiConfig::setOTAWiFiAPSTA(String APssid, String APpwd, String STAssid, String STApwd, String ip) {
   if (onlyotaTAG) {
     clOTAPIP(ip);
     WiFi.mode(WIFI_AP_STA);
@@ -987,4 +1011,46 @@ void BGWiFiConfig::setOTAWiFiAPSTA(String APssid, String APpwd, String STAssid, 
     Serial.println();
     Serial.println("[未定义onlyota,不能使用setOTAWiFiAPSTA函数]");
   }
+}
+
+void BGWiFiConfig::setConFailReset(int xReConNum, int xReConTime, bool xIsReboot) {
+  boolConFailResetTag = true;
+  gReConNum = xReConNum;
+  SECtime = xReConTime;
+  boolConFailResetIsReboot = xIsReboot;
+}
+
+void BGWiFiConfig::STA_M3_FailReset() {
+  int iReConNum = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    if (MODE == "2") {
+      STA_M2(SSID, PWD, IP, GATEWAY, SUBNET, DNS);
+    } else {
+      STA_M1(SSID, PWD);
+    }
+    iReConNum++;
+    if(WiFi.isConnected()){
+      break;
+    }
+    else if(iReConNum>gReConNum){
+      boolConFailResetTag = false;
+      mySerial(">>重置配网信息中，请等待...", true);
+      runTAG = "重连仍失败，重置配网信息中，请等待";
+      clearWiFi();
+      runTAG = "连接失败，未成功连接WiFi[" + SSID + "]，已重置配网";
+      if(boolConFailResetIsReboot){
+        mySerial("WiFi连接失败，已重置配网并将重启，请重新配网<<<", true);
+        ESP.restart();
+      }else{
+        mySerial("WiFi连接失败，已重置配网，请重启开发板并配网<<<", true);
+      }
+      break;
+    }
+    runTAG = "连接失败，正在第[ "+String(iReConNum+1)+" ]次连接WiFi[" + SSID + "]";
+    mySerial("连接失败，正在第[ "+String(iReConNum+1)+" ]次连接WiFi[" + SSID + "]", true);
+  }
+}
+
+void BGWiFiConfig::useSpaceWiFi(bool xSpaceWiFiTag){
+  boolSpaceWiFiTag = xSpaceWiFiTag;
 }
