@@ -57,6 +57,7 @@ private:
   int OTASECtime = 3600;
   int gReConNum = 0;
   static int UMSGnum;
+  static int gICompatibleM;
   bool booloutwifiset = false;
   bool booloffconnectwifi = false;
   bool OTASECtimeTAG = false;
@@ -87,6 +88,8 @@ private:
   String FS_R_UMSG();
   void clOTAPIP(String ip);
   void STA_M3_FailReset();
+  IPAddress getPWIP();
+  static String getPWIPDH();
 
 public:
   void begin();
@@ -117,6 +120,8 @@ public:
   void setOTAWiFiAPSTA(String APssid, String APpwd, String STAssid, String STApwd, String ip = "192.168.33.33");
   void setConFailReset(int xReConNum = 0, int xReConTime = 30, bool xIsReboot = false);
   void useSpaceWiFi(bool xSpaceWiFiTag = false);
+  void setCompatibleMode(bool xCMTag = true);
+  void setCompatibleModeTest(bool xCMTag = true);
 };
 #endif
 
@@ -145,6 +150,7 @@ WebServer OTAserver(80);
 ESP8266WebServer OTAserver(80);
 #endif
 
+int BGWiFiConfig::gICompatibleM = 1;
 bool BGWiFiConfig::booloffSerial = false;
 bool BGWiFiConfig::boolautostart = false;
 bool BGWiFiConfig::boolSpaceWiFiTag = false;
@@ -242,10 +248,10 @@ void BGWiFiConfig::begin() {
     if (TAG == "OFF" && !booloffconnectwifi) {
       if (UMSGnum > 0 && UMSGnum < 13)
         StrCL_UMSG(FS_R_UMSG());
-      if(boolConFailResetTag){
+      if (boolConFailResetTag) {
         STA_M3_FailReset();
         debugPZ();
-      }else{  
+      } else {
         if (MODE == "2") {
           STA_M2(SSID, PWD, IP, GATEWAY, SUBNET, DNS);
           debugPZ();
@@ -292,7 +298,7 @@ void BGWiFiConfig::begin() {
         mySerial(">>当前为eeshow模式0", true);
       }
       WFconfigserver.begin();
-      if (WFconfigDNSserver.start(53, "*", StrToIP("192.168.22.22"))) {
+      if (WFconfigDNSserver.start(53, "*", getPWIP())) {
         mySerial(">>eeshow模式启动成功", true);
       } else {
         mySerial(">>eeshow模式启动失败", true);
@@ -322,7 +328,12 @@ void BGWiFiConfig::begin() {
       }
     }
   } else {
-    mySerial("配网程序启动失败！！", true);
+   mySerial("配网挂载初始化中ing..", true);
+    if(!SPIFFS.begin(true)){
+      mySerial("配网程序启动失败！！", true);
+    }else{
+      ESP.restart();
+    }
   }
 }
 
@@ -359,9 +370,17 @@ void BGWiFiConfig::debugPZ() {
 }
 
 void BGWiFiConfig::APstart() {
-  WiFi.softAPConfig(StrToIP("192.168.22.22"),
-                    StrToIP("192.168.22.1"),
-                    StrToIP("255.255.255.0"));
+  if (gICompatibleM != 3) {
+    if (gICompatibleM < 2) {
+      WiFi.softAPConfig(getPWIP(),
+                        StrToIP("192.168.22.1"),
+                        StrToIP("255.255.255.0"));
+    } else {
+      WiFi.softAPConfig(getPWIP(),
+                        getPWIP(),
+                        StrToIP("255.255.255.0"));
+    }
+  }
   if (APssid != "")
     WiFi.softAP(APssid.c_str(), APpwd.c_str());
   else
@@ -435,7 +454,7 @@ void BGWiFiConfig::STA_M1(String Mname, String Mssid) {
     mySerial(String(i), false);
     if (i > SECtime - 1) {
       Serial.println();
-      if(!boolConFailResetTag){
+      if (!boolConFailResetTag) {
         runTAG = "连接失败，未成功连接WiFi[" + SSID + "]";
         mySerial("WiFi连接超时,请重试", true);
       }
@@ -473,7 +492,7 @@ void BGWiFiConfig::STA_M2(String Mname, String Mssid, String Mlocal_IP, String M
     mySerial(String(i), false);
     if (i > SECtime - 1) {
       Serial.println();
-      if(!boolConFailResetTag){
+      if (!boolConFailResetTag) {
         runTAG = "连接失败，未成功连接WiFi[" + SSID + "]";
         mySerial("WiFi连接超时,请重试", true);
       }
@@ -493,6 +512,7 @@ void BGWiFiConfig::STA_M2(String Mname, String Mssid, String Mlocal_IP, String M
 
 
 void BGWiFiConfig::WRindexDH() {
+  /*
   String dhhtml = String("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">")
                   + String("<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" ")
                   + String("content=\"width=device-width, initial-scale=1.0\"><title>BGWiFiConfig配网 </title > ")
@@ -501,6 +521,17 @@ void BGWiFiConfig::WRindexDH() {
                   + String("<h2 style=\"color: wheat;\">请选择配网模式</h2>")
                   + String("<a class=\"button\" href=\"http://192.168.22.22/def\">默认网页配网</a><br>")
                   + String("<a class=\"button\" href=\"http://192.168.22.22/html\">自定义网页配网</a>")
+                  + String("<h3>api配网和微信小程序配网默认已支持，无需选择。</h3>")
+                  + String("</body></html>");*/
+
+  String dhhtml = String("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">")
+                  + String("<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" ")
+                  + String("content=\"width=device-width, initial-scale=1.0\"><title>BGWiFiConfig配网 </title > ")
+                  + String("<style> .button { background-color: #4CAF50; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px; text-align: center; } .grad { background-color: red; background-image: linear-gradient(#e66465, #9198e5); text-align: center; } </style>")
+                  + String("</head> <h1 style=\"color: rgb(87, 217, 215);\">BGWiFiConfig</h1>")
+                  + String("<h2 style=\"color: wheat;\">请选择配网模式</h2>")
+                  + String("<a class=\"button\" href=\"http://" + getPWIPDH() + "/def\">默认网页配网</a><br>")
+                  + String("<a class=\"button\" href=\"http://" + getPWIPDH() + "/html\">自定义网页配网</a>")
                   + String("<h3>api配网和微信小程序配网默认已支持，无需选择。</h3>")
                   + String("</body></html>");
 
@@ -556,7 +587,7 @@ void BGWiFiConfig::WRhtmlresult() {
   }
 
   if (ssid != "" && ssid != NULL) {
-    if(!boolSpaceWiFiTag){
+    if (!boolSpaceWiFiTag) {
       retStr.replace(" ", "");
     }
     if (FS_W(retStr)) {
@@ -625,7 +656,7 @@ void BGWiFiConfig::WRresult() {
                 + String("<p>已调用autoStart()函数，已自动重启开发板，请观察串口输出！！</p>")
                 + String("<input type=\"submit\" value=\"返回配网页面\" onclick=\"javascript:history.back();\"></center></body></html>");
   if (ssid != "" && ssid != NULL) {
-    if(!boolSpaceWiFiTag){
+    if (!boolSpaceWiFiTag) {
       retStr.replace(" ", "");
     }
     if (FS_W(retStr)) {
@@ -681,25 +712,25 @@ void BGWiFiConfig::WRapi() {
     }
   }
 
-  if(!boolSpaceWiFiTag){
+  if (!boolSpaceWiFiTag) {
     retStr.replace(" ", "");
   }
   if (FS_W(retStr)) {
     if (StrApiRet[0] != NULL && StrApiRet[0] != "NULL" && StrApiRet[0] != "") {
       if (StrApiRet[1] == "addWiFi") {
-        if(boolautostart) {
+        if (boolautostart) {
           WFconfigserver.send(200, "text/plain", StrApiRet[0] + ">>[" + mode + "," + ssid + "," + pwd + "]<<");
           delay_rst();
           ESP.restart();
-        } else{
+        } else {
           WFconfigserver.send(200, "text/plain", StrApiRet[0] + ">>[" + mode + "," + ssid + "," + pwd + "]<<");
         }
       } else {
-        if(boolautostart){
+        if (boolautostart) {
           WFconfigserver.send(200, "text/plain", StrApiRet[0]);
           delay_rst();
           ESP.restart();
-        }else{
+        } else {
           WFconfigserver.send(200, "text/plain", StrApiRet[0]);
         }
       }
@@ -1029,28 +1060,79 @@ void BGWiFiConfig::STA_M3_FailReset() {
       STA_M1(SSID, PWD);
     }
     iReConNum++;
-    if(WiFi.isConnected()){
+    if (WiFi.isConnected()) {
       break;
-    }
-    else if(iReConNum>gReConNum){
+    } else if (iReConNum > gReConNum) {
       boolConFailResetTag = false;
       mySerial(">>重置配网信息中，请等待...", true);
       runTAG = "重连仍失败，重置配网信息中，请等待";
       clearWiFi();
       runTAG = "连接失败，未成功连接WiFi[" + SSID + "]，已重置配网";
-      if(boolConFailResetIsReboot){
+      if (boolConFailResetIsReboot) {
         mySerial("WiFi连接失败，已重置配网并将重启，请重新配网<<<", true);
         ESP.restart();
-      }else{
+      } else {
         mySerial("WiFi连接失败，已重置配网，请重启开发板并配网<<<", true);
       }
       break;
     }
-    runTAG = "连接失败，正在第[ "+String(iReConNum+1)+" ]次连接WiFi[" + SSID + "]";
-    mySerial("连接失败，正在第[ "+String(iReConNum+1)+" ]次连接WiFi[" + SSID + "]", true);
+    runTAG = "连接失败，正在第[ " + String(iReConNum + 1) + " ]次连接WiFi[" + SSID + "]";
+    mySerial("连接失败，正在第[ " + String(iReConNum + 1) + " ]次连接WiFi[" + SSID + "]", true);
   }
 }
 
-void BGWiFiConfig::useSpaceWiFi(bool xSpaceWiFiTag){
+void BGWiFiConfig::useSpaceWiFi(bool xSpaceWiFiTag) {
   boolSpaceWiFiTag = xSpaceWiFiTag;
+}
+
+IPAddress BGWiFiConfig::getPWIP() {
+  IPAddress rtIP = StrToIP("192.168.22.22");
+  switch (gICompatibleM) {
+    case 0:
+      rtIP = StrToIP("192.168.22.1");
+      break;
+    case 1:
+      rtIP = StrToIP("192.168.22.22");
+      break;
+    case 2:
+      rtIP = StrToIP("192.168.4.1");
+      break;
+    case 3:
+      rtIP = WiFi.softAPIP();
+      break;
+  }
+  return rtIP;
+}
+
+String BGWiFiConfig::getPWIPDH() {
+  String rtIP = "192.168.22.22";
+  switch (gICompatibleM) {
+    case 0:
+      rtIP = "192.168.22.1";
+      break;
+    case 1:
+      rtIP = "192.168.22.22";
+      break;
+    case 2:
+      rtIP = "192.168.4.1";
+      break;
+    case 3:
+      rtIP = WiFi.softAPIP().toString();
+      break;
+  }
+  return rtIP;
+}
+
+void BGWiFiConfig::setCompatibleModeTest(bool xCMTag) {
+  if (xCMTag)
+    gICompatibleM = 2;
+  else
+    gICompatibleM = 3;
+}
+
+void BGWiFiConfig::setCompatibleMode(bool xCMTag) {
+  if (xCMTag)
+    gICompatibleM = 0;
+  else
+    gICompatibleM = 1;
 }

@@ -53,6 +53,8 @@ exe	KEYWORD2
 eeshow		KEYWORD2
 eeshowM	KEYWORD2
 onlyota		KEYWORD2
+setCompatibleMode		KEYWORD2
+
 
 #######################################
 # Constants (LITERAL1)
