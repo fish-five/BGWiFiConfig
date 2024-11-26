@@ -8,7 +8,7 @@
     GitHub地址：https://github.com/fish-five/BGWiFiConfig
     微信公众号：蚍蜉荣光  官方网站：www.cbug.top
  **/
-#include "BGWiFiConfig.h"
+#include <BGWiFiConfig.h>
 BGWiFiConfig wifipw;
 
 void setup() {
