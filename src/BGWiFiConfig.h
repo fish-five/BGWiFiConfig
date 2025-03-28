@@ -1,3 +1,4 @@
+#include "LittleFS.h"
 #ifndef _BGWiFiConfig_H_
 #define _BGWiFiConfig_H_
 #include <Arduino.h>
@@ -8,12 +9,30 @@
 #include <WebServer.h>
 #include <WiFiClient.h>
 #include <Update.h>
+#ifdef useLittleFS
+#include <LittleFS.h>
+#else
 #include <SPIFFS.h>
+#endif
 #else
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
+#ifdef useLittleFS
+#include <LittleFS.h>
+#else
 #include <FS.h>
+#endif
+#endif
+
+#ifdef useLittleFS
+#define FILESYSTEM LittleFS
+#else
+#ifdef ESP32
+#define FILESYSTEM SPIFFS
+#else
+#define FILESYSTEM SPIFFS
+#endif
 #endif
 
 #ifdef exe
@@ -171,8 +190,16 @@ void BGWiFiConfig::Loop() {
   }
 }
 
+/*
 void BGWiFiConfig::clearWiFi() {
-  SPIFFS.format();
+  //SPIFFS.format();
+  SPIFFS.remove("/bgwificonfig/wifiset.txt");
+  SPIFFS.remove("/bgwificonfig/umsg.txt");
+  WiFi.disconnect();
+}*/
+void BGWiFiConfig::clearWiFi() {
+  FILESYSTEM.remove("/bgwificonfig/wifiset.txt");
+  FILESYSTEM.remove("/bgwificonfig/umsg.txt");
   WiFi.disconnect();
 }
 
@@ -243,7 +270,7 @@ String BGWiFiConfig::retWiFiSET() {
 void BGWiFiConfig::begin() {
   Serial.println();
   Serial.println();
-  if (SPIFFS.begin()) {
+  if (FILESYSTEM.begin()) {
     StrCL(FS_R());
     if (TAG == "OFF" && !booloffconnectwifi) {
       if (UMSGnum > 0 && UMSGnum < 13)
@@ -312,10 +339,14 @@ void BGWiFiConfig::begin() {
       WFconfigserver.begin();
       mySerial(">>当前为默认模式", true);
 #endif
-#ifdef ESP32
-      mySerial("配网系统已就绪，预计配网时间为12秒，可以开始配网了<<<", true);
+#ifdef useLittleFS
+      mySerial("配网系统已就绪，预计配网时间为3秒，可以开始配网了<<<", true);
 #else
-      mySerial("配网系统已就绪，预计配网时间为15秒，可以开始配网了<<<", true);
+#ifdef ESP32
+      mySerial("配网系统已就绪，预计配网时间为3秒，可以开始配网了<<<", true);
+#else
+      mySerial("配网系统已就绪，预计配网时间为3秒，可以开始配网了<<<", true);
+#endif
 #endif
       runTAG = "配网程序开始运行";
       if (TAG != "OFF" && onlyotaTAG) {
@@ -328,12 +359,32 @@ void BGWiFiConfig::begin() {
       }
     }
   } else {
-   mySerial("配网挂载初始化中ing..", true);
-    if(!SPIFFS.begin(true)){
+    mySerial("配网挂载初始化中ing..", true);
+    mySerial("正在初始化挂载，请保持等待...", true);
+/*
+#ifdef ESP32
+    if (!SPIFFS.begin(true)) {
       mySerial("配网程序启动失败！！", true);
-    }else{
+    } else {
       ESP.restart();
     }
+#else
+    SPIFFS.format();
+    delay(1000);
+    ESP.restart();
+#endif
+*/
+#ifdef ESP32
+    if (!FILESYSTEM.begin(true)) {
+      mySerial("配网程序启动失败！！", true);
+    } else {
+      ESP.restart();
+    }
+#else
+    FILESYSTEM.format();
+    delay(1000);
+    ESP.restart();
+#endif
   }
 }
 
@@ -613,9 +664,9 @@ void BGWiFiConfig::WRhtmlresult() {
 void BGWiFiConfig::WRindex() {
   String time = "";
 #ifdef ESP32
-  time = "12";
+  time = "3";
 #else
-  time = "15";
+  time = "3";
 #endif
   /**
     String ret2=String("<!DOCTYPE html> <html lang=\"zh-CN\"> <head> <meta charset=\"UTF-8\"><title>BGWiFiConfig配网</title></head><body>")
@@ -754,11 +805,28 @@ IPAddress BGWiFiConfig::StrToIP(String str) {
 }
 
 bool BGWiFiConfig::FS_W(String str) {
-  if (UMSGnum < 1)
-    SPIFFS.format();
+  /* if (UMSGnum < 1)
+    //SPIFFS.format();
+    SPIFFS.remove("/bgwificonfig/wifiset.txt");
   File dataFile = SPIFFS.open("/bgwificonfig/wifiset.txt", "w");
   dataFile.print(str);
+  dataFile.close();*/
+#ifdef useLittleFS
+  if (!FILESYSTEM.exists("/bgwificonfig")) {
+    FILESYSTEM.mkdir("/bgwificonfig");
+  }
+  if (UMSGnum < 1)
+    FILESYSTEM.remove("/bgwificonfig/wifiset.txt");
+  File lsfile = FILESYSTEM.open("/bgwificonfig/wifiset.txt", "w");
+  lsfile.print(str);
+  lsfile.close();
+#else
+  if (UMSGnum < 1)
+    FILESYSTEM.remove("/bgwificonfig/wifiset.txt");
+  File dataFile = FILESYSTEM.open("/bgwificonfig/wifiset.txt", "w");
+  dataFile.print(str);
   dataFile.close();
+#endif
   Serial.println();
   mySerial(">>", true);
   if (boolautostart) {
@@ -771,10 +839,14 @@ bool BGWiFiConfig::FS_W(String str) {
 }
 
 String BGWiFiConfig::FS_R() {
-  if (!SPIFFS.exists("/bgwificonfig/wifiset.txt")) {
+  /* if (!SPIFFS.exists("/bgwificonfig/wifiset.txt")) {
     return "NULL";
   }
-  File dataFile = SPIFFS.open("/bgwificonfig/wifiset.txt", "r");
+  File dataFile = SPIFFS.open("/bgwificonfig/wifiset.txt", "r");*/
+  if (!FILESYSTEM.exists("/bgwificonfig/wifiset.txt")) {
+    return "NULL";
+  }
+  File dataFile = FILESYSTEM.open("/bgwificonfig/wifiset.txt", "r");
   String retStr;
   for (int i = 0; i < dataFile.size(); i++) {
     retStr += (char)dataFile.read();
@@ -784,20 +856,38 @@ String BGWiFiConfig::FS_R() {
 }
 
 bool BGWiFiConfig::FS_W_UMSG(String str) {
-  SPIFFS.format();
+//SPIFFS.format();
+/*SPIFFS.remove("/bgwificonfig/umsg.txt");
   File dataFile = SPIFFS.open("/bgwificonfig/umsg.txt", "w");
+  */
+#ifdef useLittleFS
+  if (!FILESYSTEM.exists("/bgwificonfig")) {
+    FILESYSTEM.mkdir("/bgwificonfig");
+  }
+  FILESYSTEM.remove("/bgwificonfig/umsg.txt");
+  File lsfile = FILESYSTEM.open("/bgwificonfig/umsg.txt", "w");
+  lsfile.print(str);
+  lsfile.close();
+#else
+  FILESYSTEM.remove("/bgwificonfig/umsg.txt");
+  File dataFile = FILESYSTEM.open("/bgwificonfig/umsg.txt", "w");
   dataFile.print(str);
   dataFile.close();
+#endif
   Serial.println();
   mySerial(">>", true);
   return true;
 }
 
 String BGWiFiConfig::FS_R_UMSG() {
-  if (!SPIFFS.exists("/bgwificonfig/umsg.txt")) {
+  /* if (!SPIFFS.exists("/bgwificonfig/umsg.txt")) {
     return "NULL";
   }
-  File dataFile = SPIFFS.open("/bgwificonfig/umsg.txt", "r");
+  File dataFile = SPIFFS.open("/bgwificonfig/umsg.txt", "r");*/
+  if (!FILESYSTEM.exists("/bgwificonfig/umsg.txt")) {
+    return "NULL";
+  }
+  File dataFile = FILESYSTEM.open("/bgwificonfig/umsg.txt", "r");
   String retStr;
   for (int i = 0; i < dataFile.size(); i++) {
     retStr += (char)dataFile.read();

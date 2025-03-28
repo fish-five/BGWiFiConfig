@@ -13,7 +13,6 @@
 BGWiFiConfig	KEYWORD1
 
 
-
 #######################################
 
 # Methods and Functions (KEYWORD2)
@@ -62,3 +61,5 @@ setCompatibleMode		KEYWORD2
 
 
 wifipw	LITERAL1
+useLittleFS	LITERAL1
+
