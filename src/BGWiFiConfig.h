@@ -1,4 +1,3 @@
-#include "LittleFS.h"
 #ifndef _BGWiFiConfig_H_
 #define _BGWiFiConfig_H_
 #include <Arduino.h>
